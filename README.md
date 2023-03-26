@@ -1,36 +1,36 @@
-<div align="center">
-<img src="https://user-images.githubusercontent.com/4405263/222497326-825b2ebb-910b-41ca-8759-785c4876faf0.png" />
-</div>
+# Ed25519
 
-Just like a Promise but you can manually resolve or reject it
+Ed25519 adapter for WebAssembly and JS implementations
 
 ```bash
-npm i @hazae41/future
+npm i @hazae41/ed25519
 ```
 
-[**Node Package 📦**](https://www.npmjs.com/package/@hazae41/future)
+[**Node Package 📦**](https://www.npmjs.com/package/@hazae41/ed25519)
 
 ## Features
 
 ### Current features
 - 100% TypeScript and ESM
 - No external dependencies
-- Unit-tested
 
 ## Usage
 
+### Berith (WebAssembly)
+
 ```typescript
-import { Future } from "@hazae41/future"
+import { Ed25519 } from "@hazae41/ed25519"
+import { Berith } from "@hazae41/berith"
 
-const future = new Future<void>()
+await Berith.initBundledOnce()
+const ed25519 = Ed25519.fromBerith(Berith)
+```
 
-const t1 = setTimeout(() => future.resolve(), 1000)
-const t2 = setTimeout(() => future.reject(), 2000)
+### Noble (JavaScript)
 
-try {
-  await future.promise
-} finally {
-  clearTimeout(t1)
-  clearTimeout(t2)
-}
+```typescript
+import { Ed25519 } from "@hazae41/ed25519"
+import * as noble_ed25519 from "@noble/curves/ed25519"
+
+const ed25519 = Ed25519.fromNoble(noble_ed25519.ed25519)
 ```
