@@ -41,16 +41,12 @@
     }
   },
   "keywords": [
-    "future",
-    "promise",
-    "manual",
-    "fulfill",
-    "reject",
-    "async",
-    "signal",
+    "ed25519",
+    "crypto",
+    "curve25519",
+    "cryptography",
+    "adapter",
     "typescript",
-    "esmodules",
-    "tested",
-    "unit-tested"
+    "esmodules"
   ]
 }
