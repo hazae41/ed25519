@@ -14,7 +14,7 @@ export function fromBerith(berith: typeof Berith): Adapter {
       return new Signature(inner)
     }
 
-    static tryCreate(bytes: Uint8Array) {
+    static tryImport(bytes: Uint8Array) {
       return tryCryptoSync(() => new berith.Ed25519Signature(bytes)).mapSync(Signature.new)
     }
 
@@ -30,7 +30,7 @@ export function fromBerith(berith: typeof Berith): Adapter {
       return new PublicKey(inner)
     }
 
-    static tryCreate(bytes: Uint8Array) {
+    static tryImport(bytes: Uint8Array) {
       return tryCryptoSync(() => new berith.Ed25519PublicKey(bytes)).mapSync(PublicKey.new)
     }
 

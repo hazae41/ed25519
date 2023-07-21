@@ -15,7 +15,7 @@ export function fromNoble(noble: typeof ed25519): Adapter {
       return new Signature(bytes)
     }
 
-    static tryCreate(bytes: Uint8Array) {
+    static tryImport(bytes: Uint8Array) {
       return new Ok(new Signature(bytes))
     }
 
@@ -31,7 +31,7 @@ export function fromNoble(noble: typeof ed25519): Adapter {
       return new PublicKey(bytes)
     }
 
-    static tryCreate(bytes: Uint8Array) {
+    static tryImport(bytes: Uint8Array) {
       return new Ok(new PublicKey(bytes))
     }
 

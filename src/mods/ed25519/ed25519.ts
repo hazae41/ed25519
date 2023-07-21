@@ -9,11 +9,11 @@ export interface PublicKey {
 }
 
 export interface PublicKeyFactory {
-  tryCreate(bytes: Uint8Array): Promiseable<Result<PublicKey, CryptoError>>
+  tryImport(bytes: Uint8Array): Promiseable<Result<PublicKey, CryptoError>>
 }
 
 export interface SignatureFactory {
-  tryCreate(bytes: Uint8Array): Promiseable<Result<Signature, CryptoError>>
+  tryImport(bytes: Uint8Array): Promiseable<Result<Signature, CryptoError>>
 }
 
 export interface Adapter {
