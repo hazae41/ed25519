@@ -1,6 +1,13 @@
 import type { Berith } from "@hazae41/berith"
 import { tryCryptoSync } from "libs/crypto/crypto.js"
 import { Adapter } from "./ed25519.js"
+import { fromSafe, isSafeSupported } from "./safe.js"
+
+export async function fromSafeOrBerith(berith: typeof Berith) {
+  if (await isSafeSupported())
+    return fromSafe()
+  return fromBerith(berith)
+}
 
 export function fromBerith(berith: typeof Berith): Adapter {
 

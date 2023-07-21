@@ -2,6 +2,13 @@ import { Ok } from "@hazae41/result"
 import type { ed25519 } from "@noble/curves/ed25519"
 import { tryCryptoSync } from "libs/crypto/crypto.js"
 import { Adapter } from "./ed25519.js"
+import { fromSafe, isSafeSupported } from "./safe.js"
+
+export async function fromSafeOrNoble(noble: typeof ed25519) {
+  if (await isSafeSupported())
+    return fromSafe()
+  return fromNoble(noble)
+}
 
 export function fromNoble(noble: typeof ed25519): Adapter {
 
