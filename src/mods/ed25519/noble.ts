@@ -1,5 +1,6 @@
 import { Ok } from "@hazae41/result"
 import type { ed25519 } from "@noble/curves/ed25519"
+import { tryCryptoSync } from "libs/crypto/crypto.js"
 import { Adapter, Copied } from "./ed25519.js"
 import { fromSafe, isSafeSupported } from "./safe.js"
 
@@ -24,15 +25,19 @@ export function fromNoble(noble: typeof ed25519): Adapter {
     }
 
     static tryRandom() {
-      return new Ok(new PrivateKey(noble.utils.randomPrivateKey()))
+      return tryCryptoSync(() => noble.utils.randomPrivateKey()).mapSync(PrivateKey.new)
     }
 
     static tryImport(bytes: Uint8Array) {
       return new Ok(new PrivateKey(bytes))
     }
 
-    tryPublic() {
-      return new Ok(new PublicKey(noble.getPublicKey(this.bytes)))
+    tryGetPublicKey() {
+      return tryCryptoSync(() => noble.getPublicKey(this.bytes)).mapSync(PublicKey.new)
+    }
+
+    trySign(payload: Uint8Array) {
+      return tryCryptoSync(() => noble.sign(payload, this.bytes)).mapSync(Signature.new)
     }
 
     tryExport() {
@@ -58,7 +63,7 @@ export function fromNoble(noble: typeof ed25519): Adapter {
     }
 
     tryVerify(payload: Uint8Array, signature: Signature) {
-      return new Ok(noble.verify(signature.bytes, payload, this.bytes))
+      return tryCryptoSync(() => noble.verify(signature.bytes, payload, this.bytes))
     }
 
     tryExport() {

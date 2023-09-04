@@ -18,6 +18,10 @@ export function fromBerith(berith: typeof Berith): Adapter {
       readonly inner: Berith.Ed25519SigningKey
     ) { }
 
+    [Symbol.dispose]() {
+      this.inner.free()
+    }
+
     static new(inner: Berith.Ed25519SigningKey) {
       return new PrivateKey(inner)
     }
@@ -30,16 +34,16 @@ export function fromBerith(berith: typeof Berith): Adapter {
       return tryCryptoSync(() => berith.Ed25519SigningKey.from_bytes(bytes)).mapSync(PrivateKey.new)
     }
 
-    tryPublic() {
+    tryGetPublicKey() {
       return tryCryptoSync(() => this.inner.public()).mapSync(PublicKey.new)
+    }
+
+    trySign(payload: Uint8Array) {
+      return tryCryptoSync(() => this.inner.sign(payload)).mapSync(Signature.new)
     }
 
     tryExport() {
       return tryCryptoSync(() => this.inner.to_bytes())
-    }
-
-    [Symbol.dispose]() {
-      this.inner.free()
     }
 
   }
@@ -49,6 +53,10 @@ export function fromBerith(berith: typeof Berith): Adapter {
     constructor(
       readonly inner: Berith.Ed25519VerifyingKey
     ) { }
+
+    [Symbol.dispose]() {
+      this.inner.free()
+    }
 
     static new(inner: Berith.Ed25519VerifyingKey) {
       return new PublicKey(inner)
@@ -66,10 +74,6 @@ export function fromBerith(berith: typeof Berith): Adapter {
       return tryCryptoSync(() => this.inner.to_bytes())
     }
 
-    [Symbol.dispose]() {
-      this.inner.free()
-    }
-
   }
 
   class Signature {
@@ -77,6 +81,10 @@ export function fromBerith(berith: typeof Berith): Adapter {
     constructor(
       readonly inner: Berith.Ed25519Signature
     ) { }
+
+    [Symbol.dispose]() {
+      this.inner.free()
+    }
 
     static new(inner: Berith.Ed25519Signature) {
       return new Signature(inner)
@@ -88,10 +96,6 @@ export function fromBerith(berith: typeof Berith): Adapter {
 
     tryExport() {
       return tryCryptoSync(() => this.inner.to_bytes())
-    }
-
-    [Symbol.dispose]() {
-      this.inner.free()
     }
 
   }

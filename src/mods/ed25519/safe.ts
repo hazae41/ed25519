@@ -25,19 +25,23 @@ export function fromSafe(): Adapter {
     }
 
     static async tryRandom() {
-      return await tryCrypto(() => crypto.subtle.generateKey("Ed25519", true, ["verify"])).then(r => r.mapSync(PrivateKey.from))
+      return await tryCrypto(() => crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"])).then(r => r.mapSync(PrivateKey.from))
     }
 
     static async tryImport(bytes: Uint8Array) {
-      return await tryCrypto(() => crypto.subtle.importKey("raw", bytes, "Ed25519", true, ["verify"])).then(r => r.mapSync(PrivateKey.from))
+      return await tryCrypto(() => crypto.subtle.importKey("raw", bytes, "Ed25519", true, ["sign", "verify"])).then(r => r.mapSync(PrivateKey.from))
     }
 
-    tryPublic() {
+    tryGetPublicKey() {
       return new Ok(new PublicKey(this.key.publicKey))
     }
 
+    async trySign(payload: Uint8Array) {
+      return await tryCrypto(() => crypto.subtle.sign("Ed25519", this.key.privateKey, payload)).then(r => r.mapSync(Signature.from))
+    }
+
     async tryExport() {
-      return await tryCrypto(() => crypto.subtle.exportKey("raw", this.key.privateKey)).then(r => r.mapSync(x => new Copied(new Uint8Array(x))))
+      return await tryCrypto(() => crypto.subtle.exportKey("raw", this.key.privateKey)).then(r => r.mapSync(Copied.from))
     }
 
   }
@@ -63,7 +67,7 @@ export function fromSafe(): Adapter {
     }
 
     async tryExport() {
-      return await tryCrypto(() => crypto.subtle.exportKey("raw", this.key)).then(r => r.mapSync(x => new Copied(new Uint8Array(x))))
+      return await tryCrypto(() => crypto.subtle.exportKey("raw", this.key)).then(r => r.mapSync(Copied.from))
     }
 
   }
@@ -78,6 +82,10 @@ export function fromSafe(): Adapter {
 
     static new(bytes: Uint8Array) {
       return new Signature(bytes)
+    }
+
+    static from(buffer: ArrayBuffer) {
+      return new Signature(new Uint8Array(buffer))
     }
 
     static tryImport(bytes: Uint8Array) {

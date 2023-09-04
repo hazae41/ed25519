@@ -10,10 +10,8 @@ export const global: {
   value: fromSafe()
 }
 
-export interface Copiable {
+export interface Copiable extends Disposable {
   readonly bytes: Uint8Array
-
-  [Symbol.dispose](): void
 
   copy(): Uint8Array
 
@@ -33,6 +31,14 @@ export class Copied implements Copiable {
   ) { }
 
   [Symbol.dispose]() { }
+
+  static new(bytes: Uint8Array) {
+    return new Copied(bytes)
+  }
+
+  static from(buffer: ArrayBuffer) {
+    return new Copied(new Uint8Array(buffer))
+  }
 
   copy() {
     return this.bytes
@@ -58,7 +64,8 @@ export interface PublicKey extends Disposable {
 }
 
 export interface PrivateKey extends Disposable {
-  tryPublic(): Promiseable<Result<PublicKey, CryptoError>>
+  tryGetPublicKey(): Promiseable<Result<PublicKey, CryptoError>>
+  trySign(payload: Uint8Array): Promiseable<Result<Signature, CryptoError>>
   tryExport(): Promiseable<Result<Copiable, CryptoError>>
 }
 
