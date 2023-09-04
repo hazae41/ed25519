@@ -51,6 +51,7 @@
     "esmodules"
   ],
   "dependencies": {
+    "@hazae41/option": "^1.0.21",
     "@hazae41/result": "^1.1.2"
   }
 }
