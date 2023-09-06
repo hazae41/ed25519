@@ -28,7 +28,7 @@ const ed25519 = Ed25519.fromBerith(Berith)
 /**
  * Set it globally (optional)
  **/
-Keccak256.set(keccak256)
+Ed25519.set(ed25519)
 ```
 
 ### Noble (JavaScript)
@@ -42,5 +42,5 @@ const ed25519 = Ed25519.fromNoble(noble_ed25519.ed25519)
 /**
  * Set it globally (optional)
  **/
-Keccak256.set(keccak256)
+Ed25519.set(ed25519)
 ```
