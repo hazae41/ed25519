@@ -24,6 +24,11 @@ import { Berith } from "@hazae41/berith"
 
 await Berith.initBundledOnce()
 const ed25519 = Ed25519.fromBerith(Berith)
+
+/**
+ * Set it globally (optional)
+ **/
+Keccak256.set(keccak256)
 ```
 
 ### Noble (JavaScript)
@@ -33,4 +38,9 @@ import { Ed25519 } from "@hazae41/ed25519"
 import * as noble_ed25519 from "@noble/curves/ed25519"
 
 const ed25519 = Ed25519.fromNoble(noble_ed25519.ed25519)
+
+/**
+ * Set it globally (optional)
+ **/
+Keccak256.set(keccak256)
 ```
