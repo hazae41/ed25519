@@ -1,11 +1,18 @@
 import { Cursor, CursorWriteError } from "@hazae41/cursor"
-import { OptionInit } from "@hazae41/option"
+import { None, Option } from "@hazae41/option"
 import { Ok, Result } from "@hazae41/result"
 import { CryptoError } from "libs/crypto/crypto.js"
 import { Promiseable } from "libs/promises/promiseable.js"
-import { fromSafe } from "./safe.js"
 
-export const global: OptionInit<Adapter> = { inner: fromSafe() }
+let global: Option<Adapter> = new None()
+
+export function get() {
+  return global.unwrap()
+}
+
+export function set(value?: Adapter) {
+  global = Option.wrap(value)
+}
 
 export interface Copiable extends Disposable {
   readonly bytes: Uint8Array
