@@ -17,7 +17,7 @@ export function set(value?: Adapter) {
 export interface Copiable extends Disposable {
   readonly bytes: Uint8Array
 
-  copy(): Uint8Array
+  copyAndDispose(): Uint8Array
 
   trySize(): Result<number, never>
 
@@ -44,7 +44,7 @@ export class Copied implements Copiable {
     return new Copied(new Uint8Array(buffer))
   }
 
-  copy() {
+  copyAndDispose() {
     return this.bytes
   }
 
