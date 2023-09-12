@@ -7,7 +7,7 @@ import { fromSafe, isSafeSupported } from "./safe.js"
 export async function fromSafeOrBerith() {
   if (await isSafeSupported())
     return fromSafe()
-  return fromBerith()
+  return await fromBerith()
 }
 
 export async function fromBerith(): Promise<Adapter> {
