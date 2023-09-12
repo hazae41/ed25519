@@ -18,6 +18,8 @@ npm i @hazae41/ed25519
 
 ### Safe (WebCrypto)
 
+https://github.com/tQsW/webcrypto-curve25519/blob/master/explainer.md
+
 ```typescript
 import { Ed25519 } from "@hazae41/ed25519"
 
