@@ -1,4 +1,10 @@
-export type AnyError = never
+export type AnyError =
+  | GenerateError
+  | ImportError
+  | ExportError
+  | ConvertError
+  | SignError
+  | VerifyError
 
 export class GenerateError extends Error {
   readonly #class = GenerateError
@@ -42,20 +48,6 @@ export class ExportError extends Error {
 
 }
 
-export class SignError extends Error {
-  readonly #class = SignError
-  readonly name = this.#class.name
-
-  constructor(options?: ErrorOptions) {
-    super(`Could not sign`, options)
-  }
-
-  static from(cause: unknown) {
-    return new SignError({ cause })
-  }
-
-}
-
 export class ConvertError extends Error {
   readonly #class = ConvertError
   readonly name = this.#class.name
@@ -66,6 +58,20 @@ export class ConvertError extends Error {
 
   static from(cause: unknown) {
     return new ConvertError({ cause })
+  }
+
+}
+
+export class SignError extends Error {
+  readonly #class = SignError
+  readonly name = this.#class.name
+
+  constructor(options?: ErrorOptions) {
+    super(`Could not sign`, options)
+  }
+
+  static from(cause: unknown) {
+    return new SignError({ cause })
   }
 
 }
