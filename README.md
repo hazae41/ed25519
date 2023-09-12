@@ -25,7 +25,7 @@ npm i @hazae41/berith
 ```typescript
 import { Ed25519 } from "@hazae41/ed25519"
 
-Ed25519.set(Ed25519.fromBerith())
+Ed25519.set(await Ed25519.fromBerith())
 ```
 
 ### Noble (JavaScript)
