@@ -16,6 +16,14 @@ npm i @hazae41/ed25519
 
 ## Usage
 
+### Safe (WebCrypto)
+
+```typescript
+import { Ed25519 } from "@hazae41/ed25519"
+
+Ed25519.set(Ed25519.fromSafe())
+```
+
 ### Berith (WebAssembly)
 
 ```bash
@@ -25,7 +33,7 @@ npm i @hazae41/berith
 ```typescript
 import { Ed25519 } from "@hazae41/ed25519"
 
-Ed25519.set(await Ed25519.fromBerith())
+Ed25519.set(await Ed25519.fromSafeOrBerith())
 ```
 
 ### Noble (JavaScript)
@@ -37,5 +45,5 @@ npm i @noble/curves
 ```typescript
 import { Ed25519 } from "@hazae41/ed25519"
 
-Ed25519.set(Ed25519.fromNoble())
+Ed25519.set(await Ed25519.fromSafeOrNoble())
 ```
