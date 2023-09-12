@@ -1,16 +1,17 @@
-import type { Berith } from "@hazae41/berith"
-import { tryCryptoSync } from "libs/crypto/crypto.js"
-import { Adapter } from "./ed25519.js"
+import { Berith } from "@hazae41/berith"
+import { Result } from "@hazae41/result"
+import { Adapter } from "./adapter.js"
+import { ConvertError, ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js"
 import { fromSafe, isSafeSupported } from "./safe.js"
 
-export async function fromNativeOrBerith(berith: typeof Berith) {
+export async function fromSafeOrBerith() {
   if (await isSafeSupported())
     return fromSafe()
-  await berith.initBundledOnce()
-  return fromBerith(berith)
+  return fromBerith()
 }
 
-export function fromBerith(berith: typeof Berith): Adapter {
+export async function fromBerith(): Promise<Adapter> {
+  await Berith.initBundledOnce()
 
   class PrivateKey {
 
@@ -26,24 +27,34 @@ export function fromBerith(berith: typeof Berith): Adapter {
       return new PrivateKey(inner)
     }
 
-    static tryRandom() {
-      return tryCryptoSync(() => berith.Ed25519SigningKey.random()).mapSync(PrivateKey.new)
+    static async tryRandom() {
+      return await Result.runAndWrap(() => {
+        return Berith.Ed25519SigningKey.random()
+      }).then(r => r.mapErrSync(GenerateError.from).mapSync(PrivateKey.new))
     }
 
-    static tryImport(bytes: Uint8Array) {
-      return tryCryptoSync(() => berith.Ed25519SigningKey.from_bytes(bytes)).mapSync(PrivateKey.new)
+    static async tryImport(bytes: Uint8Array) {
+      return await Result.runAndWrap(() => {
+        return Berith.Ed25519SigningKey.from_bytes(bytes)
+      }).then(r => r.mapErrSync(ImportError.from).mapSync(PrivateKey.new))
     }
 
     tryGetPublicKey() {
-      return tryCryptoSync(() => this.inner.public()).mapSync(PublicKey.new)
+      return Result.runAndWrapSync(() => {
+        return this.inner.public()
+      }).mapErrSync(ConvertError.from).mapSync(PublicKey.new)
     }
 
-    trySign(payload: Uint8Array) {
-      return tryCryptoSync(() => this.inner.sign(payload)).mapSync(Signature.new)
+    async trySign(payload: Uint8Array) {
+      return await Result.runAndWrap(() => {
+        return this.inner.sign(payload)
+      }).then(r => r.mapErrSync(SignError.from).mapSync(Signature.new))
     }
 
-    tryExport() {
-      return tryCryptoSync(() => this.inner.to_bytes())
+    async tryExport() {
+      return await Result.runAndWrap(() => {
+        return this.inner.to_bytes()
+      }).then(r => r.mapErrSync(ExportError.from))
     }
 
   }
@@ -62,16 +73,22 @@ export function fromBerith(berith: typeof Berith): Adapter {
       return new PublicKey(inner)
     }
 
-    static tryImport(bytes: Uint8Array) {
-      return tryCryptoSync(() => berith.Ed25519VerifyingKey.from_bytes(bytes)).mapSync(PublicKey.new)
+    static async tryImport(bytes: Uint8Array) {
+      return await Result.runAndWrap(() => {
+        return Berith.Ed25519VerifyingKey.from_bytes(bytes)
+      }).then(r => r.mapErrSync(ImportError.from).mapSync(PublicKey.new))
     }
 
-    tryVerify(payload: Uint8Array, signature: Signature) {
-      return tryCryptoSync(() => this.inner.verify(payload, signature.inner))
+    async tryVerify(payload: Uint8Array, signature: Signature) {
+      return await Result.runAndWrap(() => {
+        return this.inner.verify(payload, signature.inner)
+      }).then(r => r.mapErrSync(VerifyError.from))
     }
 
-    tryExport() {
-      return tryCryptoSync(() => this.inner.to_bytes())
+    async tryExport() {
+      return await Result.runAndWrap(() => {
+        return this.inner.to_bytes()
+      }).then(r => r.mapErrSync(ExportError.from))
     }
 
   }
@@ -91,11 +108,15 @@ export function fromBerith(berith: typeof Berith): Adapter {
     }
 
     static tryImport(bytes: Uint8Array) {
-      return tryCryptoSync(() => berith.Ed25519Signature.from_bytes(bytes)).mapSync(Signature.new)
+      return Result.runAndWrapSync(() => {
+        return Berith.Ed25519Signature.from_bytes(bytes)
+      }).mapErrSync(ImportError.from).mapSync(Signature.new)
     }
 
     tryExport() {
-      return tryCryptoSync(() => this.inner.to_bytes())
+      return Result.runAndWrapSync(() => {
+        return this.inner.to_bytes()
+      }).mapErrSync(ExportError.from)
     }
 
   }

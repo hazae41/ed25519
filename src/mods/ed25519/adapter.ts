@@ -1,8 +1,7 @@
 import { Cursor, CursorWriteError } from "@hazae41/cursor"
 import { None, Option } from "@hazae41/option"
 import { Ok, Result } from "@hazae41/result"
-import { CryptoError } from "libs/crypto/crypto.js"
-import { Promiseable } from "libs/promises/promiseable.js"
+import { ConvertError, ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js"
 
 let global: Option<Adapter> = new None()
 
@@ -59,31 +58,31 @@ export class Copied implements Copiable {
 }
 
 export interface Signature extends Disposable {
-  tryExport(): Promiseable<Result<Copiable, CryptoError>>
+  tryExport(): Result<Copiable, ExportError>
 }
 
 export interface PublicKey extends Disposable {
-  tryVerify(payload: Uint8Array, signature: Signature): Promiseable<Result<boolean, CryptoError>>
-  tryExport(): Promiseable<Result<Copiable, CryptoError>>
+  tryVerify(payload: Uint8Array, signature: Signature): Promise<Result<boolean, VerifyError>>
+  tryExport(): Promise<Result<Copiable, ExportError>>
 }
 
 export interface PrivateKey extends Disposable {
-  tryGetPublicKey(): Promiseable<Result<PublicKey, CryptoError>>
-  trySign(payload: Uint8Array): Promiseable<Result<Signature, CryptoError>>
-  tryExport(): Promiseable<Result<Copiable, CryptoError>>
+  tryGetPublicKey(): Result<PublicKey, ConvertError>
+  trySign(payload: Uint8Array): Promise<Result<Signature, SignError>>
+  tryExport(): Promise<Result<Copiable, ExportError>>
 }
 
 export interface PublicKeyFactory {
-  tryImport(bytes: Uint8Array): Promiseable<Result<PublicKey, CryptoError>>
+  tryImport(bytes: Uint8Array): Promise<Result<PublicKey, ImportError>>
 }
 
 export interface PrivateKeyFactory {
-  tryRandom(): Promiseable<Result<PrivateKey, CryptoError>>
-  tryImport(bytes: Uint8Array): Promiseable<Result<PrivateKey, CryptoError>>
+  tryRandom(): Promise<Result<PrivateKey, GenerateError>>
+  tryImport(bytes: Uint8Array): Promise<Result<PrivateKey, ImportError>>
 }
 
 export interface SignatureFactory {
-  tryImport(bytes: Uint8Array): Promiseable<Result<Signature, CryptoError>>
+  tryImport(bytes: Uint8Array): Result<Signature, ImportError>
 }
 
 export interface Adapter {

@@ -1,9 +1,11 @@
-import { Ok } from "@hazae41/result";
-import { tryCrypto } from "libs/crypto/crypto.js";
-import { Adapter, Copied } from "./ed25519.js";
+import { Ok, Result } from "@hazae41/result";
+import { Adapter, Copied } from "./adapter.js";
+import { ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js";
 
 export async function isSafeSupported() {
-  return await tryCrypto(() => crypto.subtle.generateKey("Ed25519", false, ["sign", "verify"])).then(r => r.isOk())
+  return await Result.runAndWrap(() => {
+    return crypto.subtle.generateKey("Ed25519", false, ["sign", "verify"])
+  }).then(r => r.isOk())
 }
 
 export function fromSafe(): Adapter {
@@ -25,11 +27,15 @@ export function fromSafe(): Adapter {
     }
 
     static async tryRandom() {
-      return await tryCrypto(() => crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"])).then(r => r.mapSync(PrivateKey.from))
+      return await Result.runAndWrap(() => {
+        return crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"])
+      }).then(r => r.mapErrSync(GenerateError.from).mapSync(PrivateKey.from))
     }
 
     static async tryImport(bytes: Uint8Array) {
-      return await tryCrypto(() => crypto.subtle.importKey("raw", bytes, "Ed25519", true, ["sign", "verify"])).then(r => r.mapSync(PrivateKey.from))
+      return await Result.runAndWrap(() => {
+        return crypto.subtle.importKey("raw", bytes, "Ed25519", true, ["sign", "verify"])
+      }).then(r => r.mapErrSync(ImportError.from).mapSync(PrivateKey.from))
     }
 
     tryGetPublicKey() {
@@ -37,11 +43,15 @@ export function fromSafe(): Adapter {
     }
 
     async trySign(payload: Uint8Array) {
-      return await tryCrypto(() => crypto.subtle.sign("Ed25519", this.key.privateKey, payload)).then(r => r.mapSync(Signature.from))
+      return await Result.runAndWrap(() => {
+        return crypto.subtle.sign("Ed25519", this.key.privateKey, payload)
+      }).then(r => r.mapErrSync(SignError.from).mapSync(Signature.from))
     }
 
     async tryExport() {
-      return await tryCrypto(() => crypto.subtle.exportKey("raw", this.key.privateKey)).then(r => r.mapSync(Copied.from))
+      return await Result.runAndWrap(() => {
+        return crypto.subtle.exportKey("raw", this.key.privateKey)
+      }).then(r => r.mapErrSync(ExportError.from).mapSync(Copied.from))
     }
 
   }
@@ -59,15 +69,21 @@ export function fromSafe(): Adapter {
     }
 
     static async tryImport(bytes: Uint8Array) {
-      return await tryCrypto(() => crypto.subtle.importKey("raw", bytes, "Ed25519", true, ["verify"])).then(r => r.mapSync(PublicKey.new))
+      return await Result.runAndWrap(() => {
+        return crypto.subtle.importKey("raw", bytes, "Ed25519", true, ["verify"])
+      }).then(r => r.mapErrSync(ImportError.from).mapSync(PublicKey.new))
     }
 
     async tryVerify(payload: Uint8Array, signature: Signature) {
-      return await tryCrypto(() => crypto.subtle.verify("Ed25519", this.key, signature.bytes, payload))
+      return await Result.runAndWrap(() => {
+        return crypto.subtle.verify("Ed25519", this.key, signature.bytes, payload)
+      }).then(r => r.mapErrSync(VerifyError.from))
     }
 
     async tryExport() {
-      return await tryCrypto(() => crypto.subtle.exportKey("raw", this.key)).then(r => r.mapSync(Copied.from))
+      return await Result.runAndWrap(() => {
+        return crypto.subtle.exportKey("raw", this.key)
+      }).then(r => r.mapErrSync(ExportError.from).mapSync(Copied.from))
     }
 
   }

@@ -18,29 +18,24 @@ npm i @hazae41/ed25519
 
 ### Berith (WebAssembly)
 
+```bash
+npm i @hazae41/berith
+```
+
 ```typescript
 import { Ed25519 } from "@hazae41/ed25519"
-import { Berith } from "@hazae41/berith"
 
-await Berith.initBundledOnce()
-const ed25519 = Ed25519.fromBerith(Berith)
-
-/**
- * Set it globally (optional)
- **/
-Ed25519.set(ed25519)
+Ed25519.set(Ed25519.fromBerith())
 ```
 
 ### Noble (JavaScript)
 
+```bash
+npm i @noble/curves
+```
+
 ```typescript
 import { Ed25519 } from "@hazae41/ed25519"
-import * as noble_ed25519 from "@noble/curves/ed25519"
 
-const ed25519 = Ed25519.fromNoble(noble_ed25519.ed25519)
-
-/**
- * Set it globally (optional)
- **/
-Ed25519.set(ed25519)
+Ed25519.set(Ed25519.fromNoble())
 ```
