@@ -1,6 +1,7 @@
+import { Base64Url } from "@hazae41/base64url"
 import { Berith } from "@hazae41/berith"
-import { Result } from "@hazae41/result"
-import { Adapter } from "./adapter.js"
+import { Ok, Result } from "@hazae41/result"
+import { Adapter, PrivateKeyJwk } from "./adapter.js"
 import { ConvertError, ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js"
 import { fromSafe, isSafeSupported } from "./safe.js"
 
@@ -39,6 +40,13 @@ export async function fromBerith(): Promise<Adapter> {
       }).then(r => r.mapErrSync(ImportError.from).mapSync(PrivateKey.new))
     }
 
+    static async tryImportJwk(jwk: PrivateKeyJwk) {
+      return await Result.unthrow<Result<Berith.Ed25519SigningKey, unknown>>(async t => {
+        using slice = Base64Url.get().tryDecodeUnpadded(jwk.d).throw(t)
+        return Result.runAndWrapSync(() => Berith.Ed25519SigningKey.from_bytes(slice.bytes))
+      }).then(r => r.mapErrSync(ImportError.from).mapSync(PrivateKey.new))
+    }
+
     tryGetPublicKey() {
       return Result.runAndWrapSync(() => {
         return this.inner.public()
@@ -54,6 +62,19 @@ export async function fromBerith(): Promise<Adapter> {
     async tryExport() {
       return await Result.runAndWrap(() => {
         return this.inner.to_bytes()
+      }).then(r => r.mapErrSync(ExportError.from))
+    }
+
+    async tryExportJwk() {
+      return await Result.unthrow<Result<PrivateKeyJwk, unknown>>(async t => {
+        using dSlice = Result.runAndWrapSync(() => this.inner.to_bytes()).throw(t)
+        const d = Base64Url.get().tryEncodeUnpadded(dSlice.bytes).throw(t)
+
+        using pubRef = Result.runAndWrapSync(() => this.inner.public()).throw(t)
+        using xSlice = Result.runAndWrapSync(() => pubRef.to_bytes()).throw(t)
+        const x = Base64Url.get().tryEncodeUnpadded(xSlice.bytes).throw(t)
+
+        return new Ok({ crv: "Ed25519", kty: "OKP", d, x } as PrivateKeyJwk)
       }).then(r => r.mapErrSync(ExportError.from))
     }
 

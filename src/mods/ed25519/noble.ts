@@ -1,7 +1,8 @@
+import { Base64Url } from "@hazae41/base64url"
 import { Ok, Result } from "@hazae41/result"
 import { ed25519 } from "@noble/curves/ed25519"
-import { Adapter, Copied } from "./adapter.js"
-import { ConvertError, GenerateError, SignError, VerifyError } from "./errors.js"
+import { Adapter, Copied, PrivateKeyJwk } from "./adapter.js"
+import { ConvertError, ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js"
 import { fromSafe, isSafeSupported } from "./safe.js"
 
 export async function fromSafeOrNoble() {
@@ -34,6 +35,12 @@ export function fromNoble(): Adapter {
       return new Ok(new PrivateKey(bytes))
     }
 
+    static async tryImportJwk(jwk: PrivateKeyJwk) {
+      return await Result.unthrow<Result<PrivateKey, unknown>>(async t => {
+        return new Ok(new PrivateKey(Base64Url.get().tryDecodeUnpadded(jwk.d).throw(t).copyAndDispose()))
+      }).then(r => r.mapErrSync(ImportError.from))
+    }
+
     tryGetPublicKey() {
       return Result.runAndWrapSync(() => {
         return ed25519.getPublicKey(this.bytes)
@@ -48,6 +55,17 @@ export function fromNoble(): Adapter {
 
     async tryExport() {
       return new Ok(new Copied(this.bytes))
+    }
+
+    async tryExportJwk() {
+      return await Result.unthrow<Result<PrivateKeyJwk, unknown>>(async t => {
+        const d = Base64Url.get().tryEncodeUnpadded(this.bytes).throw(t)
+
+        const publicKey = Result.runAndWrapSync(() => ed25519.getPublicKey(this.bytes)).throw(t)
+        const x = Base64Url.get().tryEncodeUnpadded(publicKey).throw(t)
+
+        return new Ok({ crv: "Ed25519", kty: "OKP", d, x } as PrivateKeyJwk)
+      }).then(r => r.mapErrSync(ExportError.from))
     }
 
   }

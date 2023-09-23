@@ -57,6 +57,31 @@ export class Copied implements Copiable {
 
 }
 
+export interface PrivateKeyJwk {
+  readonly crv: "Ed25519"
+  readonly kty: "OKP"
+
+  /**
+   * Base64 private key
+   */
+  readonly d: string
+
+  /**
+   * Base64 public key
+   */
+  readonly x: string
+}
+
+export interface PublicKeyJwk {
+  readonly crv: "Ed25519"
+  readonly kty: "OKP"
+
+  /**
+   * Base64 public key
+   */
+  readonly x: string
+}
+
 export interface Signature extends Disposable {
   tryExport(): Result<Copiable, ExportError>
 }
@@ -69,7 +94,7 @@ export interface PublicKey extends Disposable {
 export interface PrivateKey extends Disposable {
   tryGetPublicKey(): Result<PublicKey, ConvertError>
   trySign(payload: Uint8Array): Promise<Result<Signature, SignError>>
-  tryExport(): Promise<Result<Copiable, ExportError>>
+  tryExportJwk(): Promise<Result<PrivateKeyJwk, ExportError>>
 }
 
 export interface PublicKeyFactory {
@@ -78,7 +103,7 @@ export interface PublicKeyFactory {
 
 export interface PrivateKeyFactory {
   tryRandom(): Promise<Result<PrivateKey, GenerateError>>
-  tryImport(bytes: Uint8Array): Promise<Result<PrivateKey, ImportError>>
+  tryImportJwk(jwk: PrivateKeyJwk): Promise<Result<PrivateKey, ImportError>>
 }
 
 export interface SignatureFactory {

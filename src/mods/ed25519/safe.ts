@@ -1,31 +1,11 @@
 import { Ok, Result } from "@hazae41/result";
-import { Adapter, Copied } from "./adapter.js";
+import { Adapter, Copied, PrivateKeyJwk } from "./adapter.js";
 import { ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js";
 
 export async function isSafeSupported() {
   return await Result.runAndWrap(() => {
     return crypto.subtle.generateKey("Ed25519", false, ["sign", "verify"])
   }).then(r => r.isOk())
-}
-
-export namespace Pkcs8 {
-
-  /**
-   * DER header
-   */
-  const header = new Uint8Array([48, 46, 2, 1, 0, 48, 5, 6, 3, 43, 101, 112, 4, 34, 4, 32])
-
-  export function fromRaw(raw: Uint8Array) {
-    const pkcs8 = new Uint8Array(header.length + raw.length)
-    pkcs8.set(header, 0)
-    pkcs8.set(raw, header.length)
-    return pkcs8
-  }
-
-  export function intoRaw(pkcs8: Uint8Array) {
-    return pkcs8.subarray(header.length)
-  }
-
 }
 
 export function fromSafe(): Adapter {
@@ -52,10 +32,12 @@ export function fromSafe(): Adapter {
       }).then(r => r.mapErrSync(GenerateError.from).mapSync(PrivateKey.from))
     }
 
-    static async tryImport(bytes: Uint8Array) {
-      return await Result.runAndWrap(() => {
-        return crypto.subtle.importKey("pkcs8", Pkcs8.fromRaw(bytes), "Ed25519", true, ["sign", "verify"])
-      }).then(r => r.mapErrSync(ImportError.from).mapSync(PrivateKey.from))
+    static async tryImportJwk(jwk: PrivateKeyJwk) {
+      return await Result.runAndWrap(async () => {
+        const privateKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, x: undefined }, "Ed25519", true, ["sign"])
+        const publicKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, d: undefined }, "Ed25519", true, ["verify"])
+        return new PrivateKey({ privateKey, publicKey })
+      }).then(r => r.mapErrSync(ImportError.from))
     }
 
     tryGetPublicKey() {
@@ -68,10 +50,10 @@ export function fromSafe(): Adapter {
       }).then(r => r.mapErrSync(SignError.from).mapSync(Signature.from))
     }
 
-    async tryExport() {
+    async tryExportJwk(): Promise<Result<PrivateKeyJwk, ExportError>> {
       return await Result.runAndWrap(async () => {
-        return Pkcs8.intoRaw(new Uint8Array(await crypto.subtle.exportKey("pkcs8", this.key.privateKey)))
-      }).then(r => r.mapErrSync(ExportError.from).mapSync(Copied.from))
+        return await crypto.subtle.exportKey("jwk", this.key.privateKey) as PrivateKeyJwk
+      }).then(r => r.mapErrSync(ExportError.from))
     }
 
   }
