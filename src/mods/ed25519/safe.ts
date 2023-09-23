@@ -8,6 +8,26 @@ export async function isSafeSupported() {
   }).then(r => r.isOk())
 }
 
+export namespace Pkcs8 {
+
+  /**
+   * DER header
+   */
+  const header = new Uint8Array([48, 46, 2, 1, 0, 48, 5, 6, 3, 43, 101, 112, 4, 34, 4, 32])
+
+  export function fromRaw(raw: Uint8Array) {
+    const pkcs8 = new Uint8Array(header.length + raw.length)
+    pkcs8.set(header, 0)
+    pkcs8.set(raw, header.length)
+    return pkcs8
+  }
+
+  export function intoRaw(pkcs8: Uint8Array) {
+    return pkcs8.subarray(header.length)
+  }
+
+}
+
 export function fromSafe(): Adapter {
 
   class PrivateKey {
@@ -34,7 +54,7 @@ export function fromSafe(): Adapter {
 
     static async tryImport(bytes: Uint8Array) {
       return await Result.runAndWrap(() => {
-        return crypto.subtle.importKey("raw", bytes, "Ed25519", true, ["sign", "verify"])
+        return crypto.subtle.importKey("pkcs8", Pkcs8.fromRaw(bytes), "Ed25519", true, ["sign", "verify"])
       }).then(r => r.mapErrSync(ImportError.from).mapSync(PrivateKey.from))
     }
 
@@ -49,8 +69,8 @@ export function fromSafe(): Adapter {
     }
 
     async tryExport() {
-      return await Result.runAndWrap(() => {
-        return crypto.subtle.exportKey("raw", this.key.privateKey)
+      return await Result.runAndWrap(async () => {
+        return Pkcs8.intoRaw(new Uint8Array(await crypto.subtle.exportKey("pkcs8", this.key.privateKey)))
       }).then(r => r.mapErrSync(ExportError.from).mapSync(Copied.from))
     }
 
