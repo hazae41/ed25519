@@ -1,5 +1,6 @@
+import { Box, Copiable, Copied } from "@hazae41/box";
 import { Ok, Result } from "@hazae41/result";
-import { Adapter, Copied, PrivateKeyJwk } from "./adapter.js";
+import { Adapter, PrivateKeyJwk } from "./adapter.js";
 import { ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js";
 
 export async function isSafeSupported() {
@@ -44,9 +45,9 @@ export function fromSafe(): Adapter {
       return new Ok(new PublicKey(this.key.publicKey))
     }
 
-    async trySign(payload: Uint8Array) {
+    async trySign(payload: Box<Copiable>) {
       return await Result.runAndWrap(() => {
-        return crypto.subtle.sign("Ed25519", this.key.privateKey, payload)
+        return crypto.subtle.sign("Ed25519", this.key.privateKey, payload.get().bytes)
       }).then(r => r.mapErrSync(SignError.from).mapSync(Signature.from))
     }
 
@@ -70,22 +71,22 @@ export function fromSafe(): Adapter {
       return new PublicKey(key)
     }
 
-    static async tryImport(bytes: Uint8Array) {
+    static async tryImport(bytes: Box<Copiable>) {
       return await Result.runAndWrap(() => {
-        return crypto.subtle.importKey("raw", bytes, "Ed25519", true, ["verify"])
+        return crypto.subtle.importKey("raw", bytes.get().bytes, "Ed25519", true, ["verify"])
       }).then(r => r.mapErrSync(ImportError.from).mapSync(PublicKey.new))
     }
 
-    async tryVerify(payload: Uint8Array, signature: Signature) {
+    async tryVerify(payload: Box<Copiable>, signature: Signature) {
       return await Result.runAndWrap(() => {
-        return crypto.subtle.verify("Ed25519", this.key, signature.bytes, payload)
+        return crypto.subtle.verify("Ed25519", this.key, signature.bytes.get().bytes, payload.get().bytes)
       }).then(r => r.mapErrSync(VerifyError.from))
     }
 
     async tryExport() {
-      return await Result.runAndWrap(() => {
-        return crypto.subtle.exportKey("raw", this.key)
-      }).then(r => r.mapErrSync(ExportError.from).mapSync(Copied.from))
+      return await Result.runAndWrap(async () => {
+        return new Uint8Array(await crypto.subtle.exportKey("raw", this.key))
+      }).then(r => r.mapErrSync(ExportError.from).mapSync(Copied.new))
     }
 
   }
@@ -93,25 +94,27 @@ export function fromSafe(): Adapter {
   class Signature {
 
     constructor(
-      readonly bytes: Uint8Array
+      readonly bytes: Box<Copiable>
     ) { }
 
-    [Symbol.dispose]() { }
+    [Symbol.dispose]() {
+      this.bytes[Symbol.dispose]()
+    }
 
-    static new(bytes: Uint8Array) {
+    static new(bytes: Box<Copiable>) {
       return new Signature(bytes)
     }
 
     static from(buffer: ArrayBuffer) {
-      return new Signature(new Uint8Array(buffer))
+      return new Signature(new Box(new Copied(new Uint8Array(buffer))))
     }
 
-    static tryImport(bytes: Uint8Array) {
+    static tryImport(bytes: Box<Copiable>) {
       return new Ok(new Signature(bytes))
     }
 
     tryExport() {
-      return new Ok(new Copied(this.bytes))
+      return new Ok(this.bytes.unwrap())
     }
 
   }
