@@ -46,9 +46,9 @@ export function fromSafe(): Adapter {
     }
 
     async trySign(payload: Box<Copiable>) {
-      return await Result.runAndWrap(() => {
-        return crypto.subtle.sign("Ed25519", this.key.privateKey, payload.get().bytes)
-      }).then(r => r.mapErrSync(SignError.from).mapSync(Signature.from))
+      return await Result.runAndWrap(async () => {
+        return await crypto.subtle.sign("Ed25519", this.key.privateKey, payload.get().bytes)
+      }).then(r => r.mapErrSync(SignError.from).mapSync(Signature.create))
     }
 
     async tryExportJwk(): Promise<Result<PrivateKeyJwk, ExportError>> {
@@ -93,7 +93,7 @@ export function fromSafe(): Adapter {
 
   class Signature {
 
-    private constructor(
+    constructor(
       readonly bytes: Box<Copiable>
     ) { }
 
@@ -102,15 +102,15 @@ export function fromSafe(): Adapter {
     }
 
     static new(bytes: Box<Copiable>) {
-      return new Signature(bytes.move())
+      return new Signature(bytes)
     }
 
-    static from(buffer: ArrayBuffer) {
+    static create(buffer: ArrayBuffer) {
       return new Signature(new Box(new Copied(new Uint8Array(buffer))))
     }
 
     static tryImport(bytes: Box<Copiable>) {
-      return new Ok(new Signature(bytes.move()))
+      return new Ok(new Signature(bytes))
     }
 
     tryExport() {
