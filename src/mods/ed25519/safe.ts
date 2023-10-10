@@ -93,7 +93,7 @@ export function fromSafe(): Adapter {
 
   class Signature {
 
-    constructor(
+    private constructor(
       readonly bytes: Box<Copiable>
     ) { }
 
@@ -102,7 +102,7 @@ export function fromSafe(): Adapter {
     }
 
     static new(bytes: Box<Copiable>) {
-      return new Signature(bytes)
+      return new Signature(bytes.move())
     }
 
     static from(buffer: ArrayBuffer) {
@@ -110,7 +110,7 @@ export function fromSafe(): Adapter {
     }
 
     static tryImport(bytes: Box<Copiable>) {
-      return new Ok(new Signature(bytes))
+      return new Ok(new Signature(bytes.move()))
     }
 
     tryExport() {
