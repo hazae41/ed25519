@@ -1,4 +1,4 @@
-import { Box, Copiable, Copied } from "@hazae41/box";
+import { BytesOrCopiable, Copied } from "@hazae41/box";
 import { Ok, Result } from "@hazae41/result";
 import { Adapter, PrivateKeyJwk } from "./adapter.js";
 import { ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js";
@@ -10,6 +10,10 @@ export async function isSafeSupported() {
 }
 
 export function fromSafe(): Adapter {
+
+  function getBytes(bytes: BytesOrCopiable) {
+    return "bytes" in bytes ? bytes.bytes : bytes
+  }
 
   class PrivateKey {
 
@@ -45,9 +49,9 @@ export function fromSafe(): Adapter {
       return new Ok(new PublicKey(this.key.publicKey))
     }
 
-    async trySign(payload: Box<Copiable>) {
+    async trySign(payload: BytesOrCopiable) {
       return await Result.runAndWrap(async () => {
-        return await crypto.subtle.sign("Ed25519", this.key.privateKey, payload.get().bytes)
+        return await crypto.subtle.sign("Ed25519", this.key.privateKey, getBytes(payload))
       }).then(r => r.mapErrSync(SignError.from).mapSync(Signature.create))
     }
 
@@ -71,15 +75,15 @@ export function fromSafe(): Adapter {
       return new PublicKey(key)
     }
 
-    static async tryImport(bytes: Box<Copiable>) {
+    static async tryImport(bytes: BytesOrCopiable) {
       return await Result.runAndWrap(() => {
-        return crypto.subtle.importKey("raw", bytes.get().bytes, "Ed25519", true, ["verify"])
+        return crypto.subtle.importKey("raw", getBytes(bytes), "Ed25519", true, ["verify"])
       }).then(r => r.mapErrSync(ImportError.from).mapSync(PublicKey.new))
     }
 
-    async tryVerify(payload: Box<Copiable>, signature: Signature) {
+    async tryVerify(payload: BytesOrCopiable, signature: Signature) {
       return await Result.runAndWrap(() => {
-        return crypto.subtle.verify("Ed25519", this.key, signature.bytes.get().bytes, payload.get().bytes)
+        return crypto.subtle.verify("Ed25519", this.key, signature.bytes, getBytes(payload))
       }).then(r => r.mapErrSync(VerifyError.from))
     }
 
@@ -94,27 +98,25 @@ export function fromSafe(): Adapter {
   class Signature {
 
     constructor(
-      readonly bytes: Box<Copiable>
+      readonly bytes: Uint8Array
     ) { }
 
-    [Symbol.dispose]() {
-      this.bytes[Symbol.dispose]()
-    }
+    [Symbol.dispose]() { }
 
-    static new(bytes: Box<Copiable>) {
+    static new(bytes: Uint8Array) {
       return new Signature(bytes)
     }
 
     static create(buffer: ArrayBuffer) {
-      return new Signature(new Box(new Copied(new Uint8Array(buffer))))
+      return new Signature(new Uint8Array(buffer))
     }
 
-    static tryImport(bytes: Box<Copiable>) {
-      return new Ok(new Signature(bytes))
+    static tryImport(bytes: BytesOrCopiable) {
+      return new Ok(new Signature(getBytes(bytes).slice()))
     }
 
     tryExport() {
-      return new Ok(this.bytes.unwrap())
+      return new Ok(new Copied(this.bytes))
     }
 
   }

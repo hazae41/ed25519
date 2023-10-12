@@ -1,4 +1,4 @@
-import { Box, Copiable } from "@hazae41/box"
+import { BytesOrCopiable, Copiable } from "@hazae41/box"
 import { None, Option } from "@hazae41/option"
 import { Result } from "@hazae41/result"
 import { ConvertError, ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js"
@@ -43,18 +43,18 @@ export interface Signature extends Disposable {
 }
 
 export interface PublicKey extends Disposable {
-  tryVerify(payload: Box<Copiable>, signature: Signature): Promise<Result<boolean, VerifyError>>
+  tryVerify(payload: BytesOrCopiable, signature: Signature): Promise<Result<boolean, VerifyError>>
   tryExport(): Promise<Result<Copiable, ExportError>>
 }
 
 export interface PrivateKey extends Disposable {
   tryGetPublicKey(): Result<PublicKey, ConvertError>
-  trySign(payload: Box<Copiable>): Promise<Result<Signature, SignError>>
+  trySign(payload: BytesOrCopiable): Promise<Result<Signature, SignError>>
   tryExportJwk(): Promise<Result<PrivateKeyJwk, ExportError>>
 }
 
 export interface PublicKeyFactory {
-  tryImport(bytes: Box<Copiable>): Promise<Result<PublicKey, ImportError>>
+  tryImport(bytes: BytesOrCopiable): Promise<Result<PublicKey, ImportError>>
 }
 
 export interface PrivateKeyFactory {
@@ -63,7 +63,7 @@ export interface PrivateKeyFactory {
 }
 
 export interface SignatureFactory {
-  tryImport(bytes: Box<Copiable>): Result<Signature, ImportError>
+  tryImport(bytes: BytesOrCopiable): Result<Signature, ImportError>
 }
 
 export interface Adapter {
