@@ -1,7 +1,7 @@
 import { Base64Url } from "@hazae41/base64url"
 import { Berith } from "@hazae41/berith"
 import { Box, BytesOrCopiable } from "@hazae41/box"
-import { Ok, Result } from "@hazae41/result"
+import { Result } from "@hazae41/result"
 import { Adapter, PrivateKeyJwk } from "./adapter.js"
 import { ConvertError, ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js"
 import { fromSafe, isSafeSupported } from "./safe.js"
@@ -37,59 +37,93 @@ export async function fromBerith(): Promise<Adapter> {
       return new PrivateKey(inner)
     }
 
+    static async randomOrThrow() {
+      return new PrivateKey(Berith.Ed25519SigningKey.random())
+    }
+
     static async tryRandom() {
-      return await Result.runAndWrap(() => {
-        return Berith.Ed25519SigningKey.random()
-      }).then(r => r.mapErrSync(GenerateError.from).mapSync(PrivateKey.new))
+      return await Result.runAndWrap(async () => {
+        return await this.randomOrThrow()
+      }).then(r => r.mapErrSync(GenerateError.from))
+    }
+
+    static async importOrThrow(bytes: BytesOrCopiable) {
+      using memory = getMemory(bytes)
+
+      const inner = Berith.Ed25519SigningKey.from_bytes(memory.inner)
+
+      return new PrivateKey(inner)
     }
 
     static async tryImport(bytes: BytesOrCopiable) {
-      using memory = getMemory(bytes)
+      return await Result.runAndWrap(async () => {
+        return await this.importOrThrow(bytes)
+      }).then(r => r.mapErrSync(ImportError.from))
+    }
 
-      return await Result.runAndWrap(() => {
-        return Berith.Ed25519SigningKey.from_bytes(memory.inner)
-      }).then(r => r.mapErrSync(ImportError.from).mapSync(PrivateKey.new))
+    static async importJwkOrThrow(jwk: PrivateKeyJwk) {
+      using slice = Base64Url.get().decodeUnpaddedOrThrow(jwk.d)
+      using memory = getMemory(slice)
+
+      const inner = Berith.Ed25519SigningKey.from_bytes(memory.inner)
+
+      return new PrivateKey(inner)
     }
 
     static async tryImportJwk(jwk: PrivateKeyJwk) {
-      return await Result.unthrow<Result<Berith.Ed25519SigningKey, unknown>>(async t => {
-        using slice = Base64Url.get().tryDecodeUnpadded(jwk.d).throw(t)
-        using memory = getMemory(slice)
+      return await Result.runAndWrap(async () => {
+        return await this.importJwkOrThrow(jwk)
+      }).then(r => r.mapErrSync(ImportError.from))
+    }
 
-        return Result.runAndWrapSync(() => Berith.Ed25519SigningKey.from_bytes(memory.inner))
-      }).then(r => r.mapErrSync(ImportError.from).mapSync(PrivateKey.new))
+    getPublicKeyOrThrow() {
+      return new PublicKey(this.inner.public())
     }
 
     tryGetPublicKey() {
       return Result.runAndWrapSync(() => {
-        return this.inner.public()
-      }).mapErrSync(ConvertError.from).mapSync(PublicKey.new)
+        return this.getPublicKeyOrThrow()
+      }).mapErrSync(ConvertError.from)
+    }
+
+    async signOrThrow(payload: BytesOrCopiable) {
+      using memory = getMemory(payload)
+
+      const inner = this.inner.sign(memory.inner)
+
+      return new Signature(inner)
     }
 
     async trySign(payload: BytesOrCopiable) {
-      using memory = getMemory(payload)
+      return await Result.runAndWrap(async () => {
+        return await this.signOrThrow(payload)
+      }).then(r => r.mapErrSync(SignError.from))
+    }
 
-      return await Result.runAndWrap(() => {
-        return this.inner.sign(memory.inner)
-      }).then(r => r.mapErrSync(SignError.from).mapSync(Signature.new))
+    async exportOrThrow() {
+      return this.inner.to_bytes()
     }
 
     async tryExport() {
       return await Result.runAndWrap(async () => {
-        return this.inner.to_bytes()
+        return await this.exportOrThrow()
       }).then(r => r.mapErrSync(ExportError.from))
     }
 
+    async exportJwkOrThrow() {
+      using dm = this.inner.to_bytes()
+      const d = Base64Url.get().encodeUnpaddedOrThrow(dm)
+
+      using pub = this.inner.public()
+      using xm = pub.to_bytes()
+      const x = Base64Url.get().encodeUnpaddedOrThrow(xm)
+
+      return { crv: "Ed25519", kty: "OKP", d, x } satisfies PrivateKeyJwk
+    }
+
     async tryExportJwk() {
-      return await Result.unthrow<Result<PrivateKeyJwk, unknown>>(async t => {
-        using dMemory = Result.runAndWrapSync(() => this.inner.to_bytes()).throw(t)
-        const d = Base64Url.get().tryEncodeUnpadded(dMemory).throw(t)
-
-        using pub = Result.runAndWrapSync(() => this.inner.public()).throw(t)
-        using xMemory = Result.runAndWrapSync(() => pub.to_bytes()).throw(t)
-        const x = Base64Url.get().tryEncodeUnpadded(xMemory).throw(t)
-
-        return new Ok({ crv: "Ed25519", kty: "OKP", d, x } as PrivateKeyJwk)
+      return await Result.runAndWrap(async () => {
+        return await this.exportJwkOrThrow()
       }).then(r => r.mapErrSync(ExportError.from))
     }
 
@@ -109,25 +143,39 @@ export async function fromBerith(): Promise<Adapter> {
       return new PublicKey(inner)
     }
 
-    static async tryImport(bytes: BytesOrCopiable) {
+    static async importOrThrow(bytes: BytesOrCopiable) {
       using memory = getMemory(bytes)
 
-      return await Result.runAndWrap(() => {
-        return Berith.Ed25519VerifyingKey.from_bytes(memory.inner)
-      }).then(r => r.mapErrSync(ImportError.from).mapSync(PublicKey.new))
+      const inner = Berith.Ed25519VerifyingKey.from_bytes(memory.inner)
+
+      return new PublicKey(inner)
+    }
+
+    static async tryImport(bytes: BytesOrCopiable) {
+      return await Result.runAndWrap(async () => {
+        return await this.importOrThrow(bytes)
+      }).then(r => r.mapErrSync(ImportError.from))
+    }
+
+    async verifyOrThrow(payload: BytesOrCopiable, signature: Signature) {
+      using memory = getMemory(payload)
+
+      return this.inner.verify(memory.inner, signature.inner)
     }
 
     async tryVerify(payload: BytesOrCopiable, signature: Signature) {
-      using memory = getMemory(payload)
-
-      return await Result.runAndWrap(() => {
-        return this.inner.verify(memory.inner, signature.inner)
+      return await Result.runAndWrap(async () => {
+        return await this.verifyOrThrow(payload, signature)
       }).then(r => r.mapErrSync(VerifyError.from))
     }
 
+    async exportOrThrow() {
+      return this.inner.to_bytes()
+    }
+
     async tryExport() {
-      return await Result.runAndWrap(() => {
-        return this.inner.to_bytes()
+      return await Result.runAndWrap(async () => {
+        return await this.exportOrThrow()
       }).then(r => r.mapErrSync(ExportError.from))
     }
 
@@ -147,17 +195,27 @@ export async function fromBerith(): Promise<Adapter> {
       return new Signature(inner)
     }
 
-    static tryImport(bytes: BytesOrCopiable) {
+    static importOrThrow(bytes: BytesOrCopiable) {
       using memory = getMemory(bytes)
 
+      const inner = Berith.Ed25519Signature.from_bytes(memory.inner)
+
+      return new Signature(inner)
+    }
+
+    static tryImport(bytes: BytesOrCopiable) {
       return Result.runAndWrapSync(() => {
-        return Berith.Ed25519Signature.from_bytes(memory.inner)
-      }).mapErrSync(ImportError.from).mapSync(Signature.new)
+        return this.importOrThrow(bytes)
+      }).mapErrSync(ImportError.from)
+    }
+
+    exportOrThrow() {
+      return this.inner.to_bytes()
     }
 
     tryExport() {
       return Result.runAndWrapSync(() => {
-        return this.inner.to_bytes()
+        return this.exportOrThrow()
       }).mapErrSync(ExportError.from)
     }
 

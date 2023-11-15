@@ -9,6 +9,12 @@ export async function isSafeSupported() {
   }).then(r => r.isOk())
 }
 
+export async function fromSafeOrNull() {
+  if (await isSafeSupported())
+    return fromSafe()
+  return undefined
+}
+
 export function fromSafe(): Adapter {
 
   function getBytes(bytes: BytesOrCopiable) {
