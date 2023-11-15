@@ -65,16 +65,16 @@ export interface PrivateKey extends Disposable {
 }
 
 export interface PublicKeyFactory {
-  importOrThrow(bytes: BytesOrCopiable): Promise<PublicKey>
-  tryImport(bytes: BytesOrCopiable): Promise<Result<PublicKey, ImportError>>
+  importOrThrow(bytes: BytesOrCopiable, extractable?: boolean): Promise<PublicKey>
+  tryImport(bytes: BytesOrCopiable, extractable?: boolean): Promise<Result<PublicKey, ImportError>>
 }
 
 export interface PrivateKeyFactory {
-  randomOrThrow(): Promise<PrivateKey>
-  tryRandom(): Promise<Result<PrivateKey, GenerateError>>
+  randomOrThrow(extractable?: boolean): Promise<PrivateKey>
+  tryRandom(extractable?: boolean): Promise<Result<PrivateKey, GenerateError>>
 
-  importJwkOrThrow(jwk: PrivateKeyJwk): Promise<PrivateKey>
-  tryImportJwk(jwk: PrivateKeyJwk): Promise<Result<PrivateKey, ImportError>>
+  importJwkOrThrow(jwk: PrivateKeyJwk, extractable?: boolean): Promise<PrivateKey>
+  tryImportJwk(jwk: PrivateKeyJwk, extractable?: boolean): Promise<Result<PrivateKey, ImportError>>
 }
 
 export interface SignatureFactory {
