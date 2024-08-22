@@ -16,6 +16,7 @@ export async function fromNativeOrNull() {
 
   if (!native)
     return
+
   return fromNative()
 }
 

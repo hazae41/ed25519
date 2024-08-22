@@ -5,9 +5,12 @@ import { Adapter, PrivateKeyJwk } from "./adapter.js"
 import { fromNative, isNativeSupported } from "./native.js"
 
 export async function fromNativeOrNoble(noble: typeof ed25519) {
-  if (await isNativeSupported())
-    return fromNative()
-  return fromNoble(noble)
+  const native = await isNativeSupported()
+
+  if (!native)
+    return fromNoble(noble)
+
+  return fromNative()
 }
 
 export function fromNoble(noble: typeof ed25519) {
