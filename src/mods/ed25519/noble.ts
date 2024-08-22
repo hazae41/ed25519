@@ -1,18 +1,17 @@
 import { Base64Url } from "@hazae41/base64url"
-import { BytesOrCopiable, Copied } from "@hazae41/box"
-import { Ok, Result } from "@hazae41/result"
-import { ed25519 } from "@noble/curves/ed25519"
+import type { ed25519 } from "@noble/curves/ed25519"
+import { BytesOrCopiable, Copied } from "libs/copiable/index.js"
 import { Adapter, PrivateKeyJwk } from "./adapter.js"
-import { ConvertError, ExportError, GenerateError, ImportError, SignError, VerifyError } from "./errors.js"
-import { fromSafe, isSafeSupported } from "./safe.js"
+import { fromNative, isNativeSupported } from "./native.js"
 
-export async function fromSafeOrNoble() {
-  if (await isSafeSupported())
-    return fromSafe()
-  return fromNoble()
+export async function fromNativeOrNoble(noble: typeof ed25519) {
+  if (await isNativeSupported())
+    return fromNative()
+  return fromNoble(noble)
 }
 
-export function fromNoble(): Adapter {
+export function fromNoble(noble: typeof ed25519) {
+  const { utils, getPublicKey, sign, verify } = noble
 
   function getBytes(bytes: BytesOrCopiable) {
     return "bytes" in bytes ? bytes.bytes : bytes
@@ -26,18 +25,12 @@ export function fromNoble(): Adapter {
 
     [Symbol.dispose]() { }
 
-    static new(bytes: Uint8Array) {
+    static create(bytes: Uint8Array) {
       return new PrivateKey(bytes)
     }
 
     static async randomOrThrow() {
-      return new PrivateKey(ed25519.utils.randomPrivateKey())
-    }
-
-    static async tryRandom() {
-      return await Result.runAndWrap(async () => {
-        return await this.randomOrThrow()
-      }).then(r => r.mapErrSync(GenerateError.from))
+      return new PrivateKey(utils.randomPrivateKey())
     }
 
     static async import(bytes: BytesOrCopiable) {
@@ -48,38 +41,18 @@ export function fromNoble(): Adapter {
       return await this.import(bytes)
     }
 
-    static async tryImport(bytes: BytesOrCopiable) {
-      return new Ok(await this.import(bytes))
-    }
-
     static async importJwkOrThrow(jwk: PrivateKeyJwk) {
-      return new PrivateKey(Base64Url.get().decodeUnpaddedOrThrow(jwk.d).copyAndDispose())
-    }
+      using memory = Base64Url.get().getOrThrow().decodeUnpaddedOrThrow(jwk.d)
 
-    static async tryImportJwk(jwk: PrivateKeyJwk) {
-      return await Result.runAndWrap(async () => {
-        return await this.importJwkOrThrow(jwk)
-      }).then(r => r.mapErrSync(ImportError.from))
+      return new PrivateKey(memory.bytes.slice())
     }
 
     getPublicKeyOrThrow() {
-      return new PublicKey(ed25519.getPublicKey(this.bytes))
-    }
-
-    tryGetPublicKey() {
-      return Result.runAndWrapSync(() => {
-        return this.getPublicKeyOrThrow()
-      }).mapErrSync(ConvertError.from)
+      return new PublicKey(getPublicKey(this.bytes))
     }
 
     async signOrThrow(payload: BytesOrCopiable) {
-      return new Signature(ed25519.sign(getBytes(payload), this.bytes))
-    }
-
-    async trySign(payload: BytesOrCopiable) {
-      return await Result.runAndWrap(async () => {
-        return await this.signOrThrow(payload)
-      }).then(r => r.mapErrSync(SignError.from))
+      return new Signature(sign(getBytes(payload), this.bytes))
     }
 
     async export() {
@@ -90,23 +63,13 @@ export function fromNoble(): Adapter {
       return await this.export()
     }
 
-    async tryExport() {
-      return new Ok(await this.export())
-    }
-
     async exportJwkOrThrow() {
-      const publicKey = ed25519.getPublicKey(this.bytes)
+      const publicKey = getPublicKey(this.bytes)
 
-      const d = Base64Url.get().encodeUnpaddedOrThrow(this.bytes)
-      const x = Base64Url.get().encodeUnpaddedOrThrow(publicKey)
+      const d = Base64Url.get().getOrThrow().encodeUnpaddedOrThrow(this.bytes)
+      const x = Base64Url.get().getOrThrow().encodeUnpaddedOrThrow(publicKey)
 
       return { crv: "Ed25519", kty: "OKP", d, x } satisfies PrivateKeyJwk
-    }
-
-    async tryExportJwk() {
-      return await Result.runAndWrap(async () => {
-        return await this.exportJwkOrThrow()
-      }).then(r => r.mapErrSync(ExportError.from))
     }
 
   }
@@ -119,7 +82,7 @@ export function fromNoble(): Adapter {
 
     [Symbol.dispose]() { }
 
-    static new(bytes: Uint8Array) {
+    static create(bytes: Uint8Array) {
       return new PublicKey(bytes)
     }
 
@@ -131,18 +94,8 @@ export function fromNoble(): Adapter {
       return await this.import(bytes)
     }
 
-    static async tryImport(bytes: BytesOrCopiable) {
-      return new Ok(await this.import(bytes))
-    }
-
     async verifyOrThrow(payload: BytesOrCopiable, signature: Signature) {
-      return ed25519.verify(signature.bytes, getBytes(payload), this.bytes)
-    }
-
-    async tryVerify(payload: BytesOrCopiable, signature: Signature) {
-      return await Result.runAndWrap(async () => {
-        return await this.verifyOrThrow(payload, signature)
-      }).then(r => r.mapErrSync(VerifyError.from))
+      return verify(signature.bytes, getBytes(payload), this.bytes)
     }
 
     async export() {
@@ -151,10 +104,6 @@ export function fromNoble(): Adapter {
 
     async exportOrThrow() {
       return await this.export()
-    }
-
-    async tryExport() {
-      return new Ok(await this.export())
     }
 
   }
@@ -167,7 +116,7 @@ export function fromNoble(): Adapter {
 
     [Symbol.dispose]() { }
 
-    static new(bytes: Uint8Array) {
+    static create(bytes: Uint8Array) {
       return new Signature(bytes)
     }
 
@@ -179,10 +128,6 @@ export function fromNoble(): Adapter {
       return this.import(bytes)
     }
 
-    static tryImport(bytes: BytesOrCopiable) {
-      return new Ok(this.import(bytes))
-    }
-
     export() {
       return new Copied(this.bytes)
     }
@@ -191,11 +136,7 @@ export function fromNoble(): Adapter {
       return this.export()
     }
 
-    tryExport() {
-      return new Ok(this.export())
-    }
-
   }
 
-  return { PrivateKey, PublicKey, Signature }
+  return { PrivateKey, PublicKey, Signature } satisfies Adapter
 }
