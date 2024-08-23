@@ -36,7 +36,7 @@ export function fromNative() {
     }
 
     static async randomOrThrow(extractable = true) {
-      return new PrivateKey(await crypto.subtle.generateKey("Ed25519", extractable, ["sign", "verify"]) as CryptoKeyPair)
+      return new PrivateKey(await crypto.subtle.generateKey("Ed25519", extractable, ["sign", "verify"]))
     }
 
     static async importJwkOrThrow(jwk: PrivateKeyJwk, extractable = true) {
