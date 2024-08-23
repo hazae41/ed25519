@@ -8,15 +8,6 @@ export async function isNativeSupported() {
   }).then(r => r.isOk())
 }
 
-export async function fromNativeOrNull() {
-  const native = await isNativeSupported()
-
-  if (!native)
-    return
-
-  return fromNative()
-}
-
 export function fromNative() {
 
   function getBytes(bytes: BytesOrCopiable) {
