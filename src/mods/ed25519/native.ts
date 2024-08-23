@@ -3,8 +3,8 @@ import { BytesOrCopiable, Copied } from "libs/copiable/index.js";
 import { Adapter, PrivateKeyJwk } from "./adapter.js";
 
 export async function isNativeSupported() {
-  return await Result.runAndWrap(() => {
-    return crypto.subtle.generateKey("Ed25519", false, ["sign", "verify"])
+  return await Result.runAndWrap(async () => {
+    return await crypto.subtle.generateKey("Ed25519", false, ["sign", "verify"])
   }).then(r => r.isOk())
 }
 
