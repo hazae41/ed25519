@@ -1,8 +1,7 @@
-import { Nullable, Option, Some } from "@hazae41/option"
+import { None, Nullable, Option } from "@hazae41/option"
 import { BytesOrCopiable, Copiable } from "libs/copiable/index.js"
-import { fromNative } from "./native.js"
 
-let global: Option<Adapter> = new Some(fromNative())
+let global: Option<Adapter> = new None()
 
 export function get() {
   return global
