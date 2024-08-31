@@ -11,7 +11,7 @@ export function set(value: Nullable<Adapter>) {
   global = Option.wrap(value)
 }
 
-export interface PrivateKeyJwk {
+export interface SigningKeyJwk {
   readonly crv: "Ed25519"
   readonly kty: "OKP"
 
@@ -26,7 +26,7 @@ export interface PrivateKeyJwk {
   readonly x: string
 }
 
-export interface PublicKeyJwk {
+export interface VerifyingKeyJwk {
   readonly crv: "Ed25519"
   readonly kty: "OKP"
 
@@ -40,28 +40,28 @@ export interface Signature extends Disposable {
   exportOrThrow(): Copiable
 }
 
-export interface PublicKey extends Disposable {
+export interface VerifyingKey extends Disposable {
   verifyOrThrow(payload: BytesOrCopiable, signature: Signature): Promise<boolean>
 
   exportOrThrow(): Promise<Copiable>
 }
 
-export interface PrivateKey extends Disposable {
-  getPublicKeyOrThrow(): PublicKey
+export interface SigningKey extends Disposable {
+  getVerifyingKeyOrThrow(): VerifyingKey
 
   signOrThrow(payload: BytesOrCopiable): Promise<Signature>
 
-  exportJwkOrThrow(): Promise<PrivateKeyJwk>
+  exportJwkOrThrow(): Promise<SigningKeyJwk>
 }
 
-export interface PublicKeyFactory {
-  importOrThrow(bytes: BytesOrCopiable, extractable?: boolean): Promise<PublicKey>
+export interface VerifyingKeyFactory {
+  importOrThrow(bytes: BytesOrCopiable, extractable?: boolean): Promise<VerifyingKey>
 }
 
-export interface PrivateKeyFactory {
-  randomOrThrow(extractable?: boolean): Promise<PrivateKey>
+export interface SigningKeyFactory {
+  randomOrThrow(extractable?: boolean): Promise<SigningKey>
 
-  importJwkOrThrow(jwk: PrivateKeyJwk, extractable?: boolean): Promise<PrivateKey>
+  importJwkOrThrow(jwk: SigningKeyJwk, extractable?: boolean): Promise<SigningKey>
 }
 
 export interface SignatureFactory {
@@ -69,7 +69,7 @@ export interface SignatureFactory {
 }
 
 export interface Adapter {
-  readonly PrivateKey: PrivateKeyFactory
-  readonly PublicKey: PublicKeyFactory
+  readonly SigningKey: SigningKeyFactory
+  readonly VerifyingKey: VerifyingKeyFactory
   readonly Signature: SignatureFactory
 }

@@ -2,7 +2,7 @@ import { Base64Url } from "@hazae41/base64url"
 import { Box } from "@hazae41/box"
 import type { Ed25519Signature, Ed25519SigningKey, Ed25519VerifyingKey, Ed25519Wasm } from "@hazae41/ed25519.wasm"
 import { BytesOrCopiable } from "libs/copiable/index.js"
-import { Adapter, PrivateKeyJwk } from "./adapter.js"
+import { Adapter, SigningKeyJwk } from "./adapter.js"
 import { fromNative, isNativeSupported } from "./native.js"
 
 export async function fromNativeOrWasm(wasm: typeof Ed25519Wasm) {
@@ -27,7 +27,7 @@ export async function fromWasm(wasm: typeof Ed25519Wasm) {
     return Box.create(new Memory(bytesOrCopiable.bytes))
   }
 
-  class PrivateKey {
+  class SigningKey {
 
     constructor(
       readonly inner: Ed25519SigningKey
@@ -38,11 +38,11 @@ export async function fromWasm(wasm: typeof Ed25519Wasm) {
     }
 
     static create(inner: Ed25519SigningKey) {
-      return new PrivateKey(inner)
+      return new SigningKey(inner)
     }
 
     static async randomOrThrow() {
-      return new PrivateKey(Ed25519SigningKey.random())
+      return new SigningKey(Ed25519SigningKey.random())
     }
 
     static async importOrThrow(bytes: BytesOrCopiable) {
@@ -50,21 +50,21 @@ export async function fromWasm(wasm: typeof Ed25519Wasm) {
 
       const inner = Ed25519SigningKey.from_bytes(memory.inner)
 
-      return new PrivateKey(inner)
+      return new SigningKey(inner)
     }
 
-    static async importJwkOrThrow(jwk: PrivateKeyJwk) {
+    static async importJwkOrThrow(jwk: SigningKeyJwk) {
       using memory = Base64Url.get().getOrThrow().decodeUnpaddedOrThrow(jwk.d)
 
       using memory2 = getMemory(memory)
 
       const inner = Ed25519SigningKey.from_bytes(memory2.inner)
 
-      return new PrivateKey(inner)
+      return new SigningKey(inner)
     }
 
-    getPublicKeyOrThrow() {
-      return new PublicKey(this.inner.public())
+    getVerifyingKeyOrThrow() {
+      return new VerifyingKey(this.inner.verifying_key())
     }
 
     async signOrThrow(payload: BytesOrCopiable) {
@@ -84,18 +84,18 @@ export async function fromWasm(wasm: typeof Ed25519Wasm) {
 
       const d = Base64Url.get().getOrThrow().encodeUnpaddedOrThrow(dm)
 
-      using pub = this.inner.public()
+      using pub = this.inner.verifying_key()
 
       using xm = pub.to_bytes()
 
       const x = Base64Url.get().getOrThrow().encodeUnpaddedOrThrow(xm)
 
-      return { crv: "Ed25519", kty: "OKP", d, x } satisfies PrivateKeyJwk
+      return { crv: "Ed25519", kty: "OKP", d, x } satisfies SigningKeyJwk
     }
 
   }
 
-  class PublicKey {
+  class VerifyingKey {
 
     constructor(
       readonly inner: Ed25519VerifyingKey
@@ -106,7 +106,7 @@ export async function fromWasm(wasm: typeof Ed25519Wasm) {
     }
 
     static create(inner: Ed25519VerifyingKey) {
-      return new PublicKey(inner)
+      return new VerifyingKey(inner)
     }
 
     static async importOrThrow(bytes: BytesOrCopiable) {
@@ -114,7 +114,7 @@ export async function fromWasm(wasm: typeof Ed25519Wasm) {
 
       const inner = Ed25519VerifyingKey.from_bytes(memory.inner)
 
-      return new PublicKey(inner)
+      return new VerifyingKey(inner)
     }
 
     async verifyOrThrow(payload: BytesOrCopiable, signature: Signature) {
@@ -157,5 +157,5 @@ export async function fromWasm(wasm: typeof Ed25519Wasm) {
 
   }
 
-  return { PrivateKey, PublicKey, Signature } satisfies Adapter
+  return { SigningKey, VerifyingKey, Signature } satisfies Adapter
 }

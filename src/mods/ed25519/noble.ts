@@ -1,7 +1,7 @@
 import { Base64Url } from "@hazae41/base64url"
 import type { ed25519 } from "@noble/curves/ed25519"
 import { BytesOrCopiable, Copied } from "libs/copiable/index.js"
-import { Adapter, PrivateKeyJwk } from "./adapter.js"
+import { Adapter, SigningKeyJwk } from "./adapter.js"
 import { fromNative, isNativeSupported } from "./native.js"
 
 export async function fromNativeOrNoble(noble: typeof ed25519) {
@@ -20,7 +20,7 @@ export function fromNoble(noble: typeof ed25519) {
     return "bytes" in bytes ? bytes.bytes : bytes
   }
 
-  class PrivateKey {
+  class SigningKey {
 
     constructor(
       readonly bytes: Uint8Array
@@ -29,29 +29,29 @@ export function fromNoble(noble: typeof ed25519) {
     [Symbol.dispose]() { }
 
     static create(bytes: Uint8Array) {
-      return new PrivateKey(bytes)
+      return new SigningKey(bytes)
     }
 
     static async randomOrThrow() {
-      return new PrivateKey(utils.randomPrivateKey())
+      return new SigningKey(utils.randomPrivateKey())
     }
 
     static async import(bytes: BytesOrCopiable) {
-      return new PrivateKey(getBytes(bytes).slice())
+      return new SigningKey(getBytes(bytes).slice())
     }
 
     static async importOrThrow(bytes: BytesOrCopiable) {
       return await this.import(bytes)
     }
 
-    static async importJwkOrThrow(jwk: PrivateKeyJwk) {
+    static async importJwkOrThrow(jwk: SigningKeyJwk) {
       using memory = Base64Url.get().getOrThrow().decodeUnpaddedOrThrow(jwk.d)
 
-      return new PrivateKey(memory.bytes.slice())
+      return new SigningKey(memory.bytes.slice())
     }
 
-    getPublicKeyOrThrow() {
-      return new PublicKey(getPublicKey(this.bytes))
+    getVerifyingKeyOrThrow() {
+      return new VerifyingKey(getPublicKey(this.bytes))
     }
 
     async signOrThrow(payload: BytesOrCopiable) {
@@ -72,12 +72,12 @@ export function fromNoble(noble: typeof ed25519) {
       const d = Base64Url.get().getOrThrow().encodeUnpaddedOrThrow(this.bytes)
       const x = Base64Url.get().getOrThrow().encodeUnpaddedOrThrow(publicKey)
 
-      return { crv: "Ed25519", kty: "OKP", d, x } satisfies PrivateKeyJwk
+      return { crv: "Ed25519", kty: "OKP", d, x } satisfies SigningKeyJwk
     }
 
   }
 
-  class PublicKey {
+  class VerifyingKey {
 
     constructor(
       readonly bytes: Uint8Array
@@ -86,11 +86,11 @@ export function fromNoble(noble: typeof ed25519) {
     [Symbol.dispose]() { }
 
     static create(bytes: Uint8Array) {
-      return new PublicKey(bytes)
+      return new VerifyingKey(bytes)
     }
 
     static async import(bytes: BytesOrCopiable) {
-      return new PublicKey(getBytes(bytes).slice())
+      return new VerifyingKey(getBytes(bytes).slice())
     }
 
     static async importOrThrow(bytes: BytesOrCopiable) {
@@ -141,5 +141,5 @@ export function fromNoble(noble: typeof ed25519) {
 
   }
 
-  return { PrivateKey, PublicKey, Signature } satisfies Adapter
+  return { SigningKey, VerifyingKey, Signature } satisfies Adapter
 }

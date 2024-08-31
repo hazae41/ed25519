@@ -1,6 +1,6 @@
 import { Result } from "@hazae41/result";
 import { BytesOrCopiable, Copied } from "libs/copiable/index.js";
-import { Adapter, PrivateKeyJwk } from "./adapter.js";
+import { Adapter, SigningKeyJwk } from "./adapter.js";
 
 export async function isNativeSupported() {
   return await Result.runAndWrap(async () => {
@@ -23,7 +23,7 @@ export function fromNative() {
     return "bytes" in bytes ? bytes.bytes : bytes
   }
 
-  class PrivateKey {
+  class SigningKey {
 
     constructor(
       readonly key: CryptoKeyPair
@@ -32,26 +32,26 @@ export function fromNative() {
     [Symbol.dispose]() { }
 
     static create(key: CryptoKeyPair) {
-      return new PrivateKey(key)
+      return new SigningKey(key)
     }
 
     static async randomOrThrow(extractable = true) {
-      return new PrivateKey(await crypto.subtle.generateKey("Ed25519", extractable, ["sign", "verify"]))
+      return new SigningKey(await crypto.subtle.generateKey("Ed25519", extractable, ["sign", "verify"]))
     }
 
-    static async importJwkOrThrow(jwk: PrivateKeyJwk, extractable = true) {
+    static async importJwkOrThrow(jwk: SigningKeyJwk, extractable = true) {
       const privateKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, x: undefined }, "Ed25519", extractable, ["sign"])
       const publicKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, d: undefined }, "Ed25519", extractable, ["verify"])
 
-      return new PrivateKey({ privateKey, publicKey })
+      return new SigningKey({ privateKey, publicKey })
     }
 
-    getPublicKey() {
-      return new PublicKey(this.key.publicKey)
+    getVerifyingKey() {
+      return new VerifyingKey(this.key.publicKey)
     }
 
-    getPublicKeyOrThrow() {
-      return this.getPublicKey()
+    getVerifyingKeyOrThrow() {
+      return this.getVerifyingKey()
     }
 
     async signOrThrow(payload: BytesOrCopiable) {
@@ -59,12 +59,12 @@ export function fromNative() {
     }
 
     async exportJwkOrThrow() {
-      return await crypto.subtle.exportKey("jwk", this.key.privateKey) as PrivateKeyJwk
+      return await crypto.subtle.exportKey("jwk", this.key.privateKey) as SigningKeyJwk
     }
 
   }
 
-  class PublicKey {
+  class VerifyingKey {
 
     constructor(
       readonly key: CryptoKey
@@ -73,11 +73,11 @@ export function fromNative() {
     [Symbol.dispose]() { }
 
     static create(key: CryptoKey) {
-      return new PublicKey(key)
+      return new VerifyingKey(key)
     }
 
     static async importOrThrow(bytes: BytesOrCopiable, extractable = true) {
-      return new PublicKey(await crypto.subtle.importKey("raw", getBytes(bytes), "Ed25519", extractable, ["verify"]))
+      return new VerifyingKey(await crypto.subtle.importKey("raw", getBytes(bytes), "Ed25519", extractable, ["verify"]))
     }
 
     async verifyOrThrow(payload: BytesOrCopiable, signature: Signature) {
@@ -120,5 +120,5 @@ export function fromNative() {
 
   }
 
-  return { PrivateKey, PublicKey, Signature } satisfies Adapter
+  return { SigningKey, VerifyingKey, Signature } satisfies Adapter
 }
