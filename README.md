@@ -49,9 +49,9 @@ npm i @noble/curves
 
 ```typescript
 import { Ed25519 } from "@hazae41/ed25519"
-import { ed25519 } from "@noble/curves/ed25519"
+import * as Ed25519Noble from "@noble/curves/ed25519"
 
-Ed25519.set(await Ed25519.fromNativeOrNoble(ed25519))
+Ed25519.set(await Ed25519.fromNativeOrNoble(Ed25519Noble))
 ```
 
 ### Noble Ed25519 (JavaScript)
@@ -64,5 +64,5 @@ npm i @noble/ed25519
 import { Ed25519 } from "@hazae41/ed25519"
 import * as ed25519 from "@noble/ed25519"
 
-Ed25519.set(await Ed25519.fromNativeOrNoble(ed25519))
+Ed25519.set(await Ed25519.fromNativeOrNoble({ ed25519 }))
 ```

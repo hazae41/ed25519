@@ -1,13 +1,17 @@
 import { Base64Url } from "@hazae41/base64url"
-import type { ed25519 as Ed25519CurvesNoble } from "@noble/curves/ed25519"
+import type * as Ed25519CurvesNoble from "@noble/curves/ed25519"
 import type * as Ed25519DirectNoble from "@noble/ed25519"
 import { BytesOrCopiable, Copied } from "libs/copiable/index.js"
 import { Adapter, SigningKeyJwk } from "./adapter.js"
 import { fromNative, isNativeSupported } from "./native.js"
 
-type Ed25519Noble =
+export type Ed25519Curve =
+  | typeof Ed25519CurvesNoble.ed25519
   | typeof Ed25519DirectNoble
-  | typeof Ed25519CurvesNoble
+
+export interface Ed25519Noble {
+  readonly ed25519: Ed25519Curve
+}
 
 export async function fromNativeOrNoble(noble: Ed25519Noble) {
   const native = await isNativeSupported()
@@ -19,7 +23,7 @@ export async function fromNativeOrNoble(noble: Ed25519Noble) {
 }
 
 export function fromNoble(noble: Ed25519Noble) {
-  const { utils, getPublicKey, sign, verify } = noble
+  const { ed25519 } = noble
 
   function getBytes(bytes: BytesOrCopiable) {
     return "bytes" in bytes ? bytes.bytes : bytes
@@ -38,7 +42,7 @@ export function fromNoble(noble: Ed25519Noble) {
     }
 
     static async randomOrThrow() {
-      return new SigningKey(utils.randomPrivateKey())
+      return new SigningKey(ed25519.utils.randomPrivateKey())
     }
 
     static async import(bytes: BytesOrCopiable) {
@@ -56,11 +60,11 @@ export function fromNoble(noble: Ed25519Noble) {
     }
 
     getVerifyingKeyOrThrow() {
-      return new VerifyingKey(getPublicKey(this.bytes))
+      return new VerifyingKey(ed25519.getPublicKey(this.bytes))
     }
 
     async signOrThrow(payload: BytesOrCopiable) {
-      return new Signature(sign(getBytes(payload), this.bytes))
+      return new Signature(ed25519.sign(getBytes(payload), this.bytes))
     }
 
     async export() {
@@ -72,7 +76,7 @@ export function fromNoble(noble: Ed25519Noble) {
     }
 
     async exportJwkOrThrow() {
-      const publicKey = getPublicKey(this.bytes)
+      const publicKey = ed25519.getPublicKey(this.bytes)
 
       const d = Base64Url.get().getOrThrow().encodeUnpaddedOrThrow(this.bytes)
       const x = Base64Url.get().getOrThrow().encodeUnpaddedOrThrow(publicKey)
@@ -103,7 +107,7 @@ export function fromNoble(noble: Ed25519Noble) {
     }
 
     async verifyOrThrow(payload: BytesOrCopiable, signature: Signature) {
-      return verify(signature.bytes, getBytes(payload), this.bytes)
+      return ed25519.verify(signature.bytes, getBytes(payload), this.bytes)
     }
 
     async export() {
