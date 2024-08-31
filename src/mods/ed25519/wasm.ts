@@ -9,15 +9,13 @@ export async function fromNativeOrWasm(wasm: typeof Ed25519Wasm) {
   const native = await isNativeSupported()
 
   if (!native)
-    return await fromWasm(wasm)
+    return fromWasm(wasm)
 
   return fromNative()
 }
 
-export async function fromWasm(wasm: typeof Ed25519Wasm) {
-  const { initBundled, Memory, Ed25519SigningKey, Ed25519VerifyingKey, Ed25519Signature } = wasm
-
-  await initBundled()
+export function fromWasm(wasm: typeof Ed25519Wasm) {
+  const { Memory, Ed25519SigningKey, Ed25519VerifyingKey, Ed25519Signature } = wasm
 
   function getMemory(bytesOrCopiable: BytesOrCopiable) {
     if (bytesOrCopiable instanceof Memory)
