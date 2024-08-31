@@ -51,7 +51,7 @@
     "esmodules"
   ],
   "peerDependencies": {
-    "@hazae41/base64url": "^1.0.14"
+    "@hazae41/base64url": "^1.0.15"
   },
   "dependencies": {
     "@hazae41/box": "^2.0.1",
