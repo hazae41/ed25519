@@ -1,10 +1,15 @@
 import { Base64Url } from "@hazae41/base64url"
-import type { ed25519 } from "@noble/curves/ed25519"
+import type { ed25519 as Ed25519CurvesNoble } from "@noble/curves/ed25519"
+import type * as Ed25519DirectNoble from "@noble/ed25519"
 import { BytesOrCopiable, Copied } from "libs/copiable/index.js"
 import { Adapter, SigningKeyJwk } from "./adapter.js"
 import { fromNative, isNativeSupported } from "./native.js"
 
-export async function fromNativeOrNoble(noble: typeof ed25519) {
+type Ed25519Noble =
+  | typeof Ed25519DirectNoble
+  | typeof Ed25519CurvesNoble
+
+export async function fromNativeOrNoble(noble: Ed25519Noble) {
   const native = await isNativeSupported()
 
   if (!native)
@@ -13,7 +18,7 @@ export async function fromNativeOrNoble(noble: typeof ed25519) {
   return fromNative()
 }
 
-export function fromNoble(noble: typeof ed25519) {
+export function fromNoble(noble: Ed25519Noble) {
   const { utils, getPublicKey, sign, verify } = noble
 
   function getBytes(bytes: BytesOrCopiable) {

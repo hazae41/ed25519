@@ -41,7 +41,7 @@ await Ed25519Wasm.initBundled()
 Ed25519.set(await Ed25519.fromNativeOrWasm(Ed25519Wasm))
 ```
 
-### Noble (JavaScript)
+### Noble Curves (JavaScript)
 
 ```bash
 npm i @noble/curves
@@ -50,6 +50,19 @@ npm i @noble/curves
 ```typescript
 import { Ed25519 } from "@hazae41/ed25519"
 import { ed25519 } from "@noble/curves/ed25519"
+
+Ed25519.set(await Ed25519.fromNativeOrNoble(ed25519))
+```
+
+### Noble Ed25519 (JavaScript)
+
+```bash
+npm i @noble/ed25519
+```
+
+```typescript
+import { Ed25519 } from "@hazae41/ed25519"
+import * as ed25519 from "@noble/ed25519"
 
 Ed25519.set(await Ed25519.fromNativeOrNoble(ed25519))
 ```
