@@ -4,7 +4,7 @@ import { Adapter, SigningKeyJwk } from "./adapter.js";
 
 export async function isNativeSupported() {
   return await Result.runAndWrap(async () => {
-    return await crypto.subtle.generateKey("Ed25519", false, ["sign", "verify"])
+    return await crypto.subtle.generateKey({ name: "Ed25519" }, false, ["sign", "verify"])
   }).then(r => r.isOk())
 }
 
