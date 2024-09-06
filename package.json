@@ -22,13 +22,13 @@
     "prepare": "npm run build"
   },
   "devDependencies": {
-    "@hazae41/ed25519.wasm": "^1.0.10",
+    "@hazae41/ed25519.wasm": "^1.0.11",
     "@hazae41/phobos": "^1.0.10",
     "@hazae41/rimraf": "^1.0.1",
-    "@noble/curves": "^1.5.0",
+    "@noble/curves": "^1.6.0",
     "@noble/ed25519": "^2.1.0",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/node": "^22.5.1",
+    "@types/node": "^22.5.4",
     "rollup": "^4.21.2",
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-node-externals": "^7.1.3",

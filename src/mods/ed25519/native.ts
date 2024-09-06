@@ -36,12 +36,12 @@ export function fromNative() {
     }
 
     static async randomOrThrow(extractable = true) {
-      return new SigningKey(await crypto.subtle.generateKey("Ed25519", extractable, ["sign", "verify"]))
+      return new SigningKey(await crypto.subtle.generateKey({ name: "Ed25519" }, extractable, ["sign", "verify"]) as CryptoKeyPair)
     }
 
     static async importJwkOrThrow(jwk: SigningKeyJwk, extractable = true) {
-      const privateKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, x: undefined }, "Ed25519", extractable, ["sign"])
-      const publicKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, d: undefined }, "Ed25519", extractable, ["verify"])
+      const privateKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, x: undefined }, { name: "Ed25519" }, extractable, ["sign"])
+      const publicKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, d: undefined }, { name: "Ed25519" }, extractable, ["verify"])
 
       return new SigningKey({ privateKey, publicKey })
     }
@@ -55,7 +55,7 @@ export function fromNative() {
     }
 
     async signOrThrow(payload: BytesOrCopiable) {
-      return new Signature(new Uint8Array(await crypto.subtle.sign("Ed25519", this.key.privateKey, getBytes(payload))))
+      return new Signature(new Uint8Array(await crypto.subtle.sign({ name: "Ed25519" }, this.key.privateKey, getBytes(payload))))
     }
 
     async exportJwkOrThrow() {
@@ -77,11 +77,11 @@ export function fromNative() {
     }
 
     static async importOrThrow(bytes: BytesOrCopiable, extractable = true) {
-      return new VerifyingKey(await crypto.subtle.importKey("raw", getBytes(bytes), "Ed25519", extractable, ["verify"]))
+      return new VerifyingKey(await crypto.subtle.importKey("raw", getBytes(bytes), { name: "Ed25519" }, extractable, ["verify"]))
     }
 
     async verifyOrThrow(payload: BytesOrCopiable, signature: Signature) {
-      return await crypto.subtle.verify("Ed25519", this.key, signature.bytes, getBytes(payload))
+      return await crypto.subtle.verify({ name: "Ed25519" }, this.key, signature.bytes, getBytes(payload))
     }
 
     async exportOrThrow() {
