@@ -17,6 +17,20 @@ export async function fromNativeOrNull() {
   return fromNative()
 }
 
+export class NativeCryptoError extends Error {
+
+  constructor(
+    readonly options?: ErrorOptions
+  ) {
+    super("A native crypto error occured", options)
+  }
+
+  static from(cause: unknown) {
+    return new NativeCryptoError({ cause })
+  }
+
+}
+
 export function fromNative() {
 
   function getBytes(bytes: BytesOrCopiable) {
@@ -36,14 +50,22 @@ export function fromNative() {
     }
 
     static async randomOrThrow(extractable = true) {
-      return new SigningKey(await crypto.subtle.generateKey({ name: "Ed25519" }, extractable, ["sign", "verify"]) as CryptoKeyPair)
+      try {
+        return new SigningKey(await crypto.subtle.generateKey({ name: "Ed25519" }, extractable, ["sign", "verify"]) as CryptoKeyPair)
+      } catch (e: unknown) {
+        throw NativeCryptoError.from(e)
+      }
     }
 
     static async importJwkOrThrow(jwk: SigningKeyJwk, extractable = true) {
-      const privateKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, x: undefined }, { name: "Ed25519" }, extractable, ["sign"])
-      const publicKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, d: undefined }, { name: "Ed25519" }, extractable, ["verify"])
+      try {
+        const privateKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, x: undefined }, { name: "Ed25519" }, extractable, ["sign"])
+        const publicKey = await crypto.subtle.importKey("jwk", { ...jwk, key_ops: undefined, d: undefined }, { name: "Ed25519" }, extractable, ["verify"])
 
-      return new SigningKey({ privateKey, publicKey })
+        return new SigningKey({ privateKey, publicKey })
+      } catch (e: unknown) {
+        throw NativeCryptoError.from(e)
+      }
     }
 
     getVerifyingKey() {
@@ -55,11 +77,19 @@ export function fromNative() {
     }
 
     async signOrThrow(payload: BytesOrCopiable) {
-      return new Signature(new Uint8Array(await crypto.subtle.sign({ name: "Ed25519" }, this.key.privateKey, getBytes(payload))))
+      try {
+        return new Signature(new Uint8Array(await crypto.subtle.sign({ name: "Ed25519" }, this.key.privateKey, getBytes(payload))))
+      } catch (e: unknown) {
+        throw NativeCryptoError.from(e)
+      }
     }
 
     async exportJwkOrThrow() {
-      return await crypto.subtle.exportKey("jwk", this.key.privateKey) as SigningKeyJwk
+      try {
+        return await crypto.subtle.exportKey("jwk", this.key.privateKey) as SigningKeyJwk
+      } catch (e: unknown) {
+        throw NativeCryptoError.from(e)
+      }
     }
 
   }
@@ -77,15 +107,27 @@ export function fromNative() {
     }
 
     static async importOrThrow(bytes: BytesOrCopiable, extractable = true) {
-      return new VerifyingKey(await crypto.subtle.importKey("raw", getBytes(bytes), { name: "Ed25519" }, extractable, ["verify"]))
+      try {
+        return new VerifyingKey(await crypto.subtle.importKey("raw", getBytes(bytes), { name: "Ed25519" }, extractable, ["verify"]))
+      } catch (e: unknown) {
+        throw NativeCryptoError.from(e)
+      }
     }
 
     async verifyOrThrow(payload: BytesOrCopiable, signature: Signature) {
-      return await crypto.subtle.verify({ name: "Ed25519" }, this.key, signature.bytes, getBytes(payload))
+      try {
+        return await crypto.subtle.verify({ name: "Ed25519" }, this.key, signature.bytes, getBytes(payload))
+      } catch (e: unknown) {
+        throw NativeCryptoError.from(e)
+      }
     }
 
     async exportOrThrow() {
-      return new Copied(new Uint8Array(await crypto.subtle.exportKey("raw", this.key)))
+      try {
+        return new Copied(new Uint8Array(await crypto.subtle.exportKey("raw", this.key)))
+      } catch (e: unknown) {
+        throw NativeCryptoError.from(e)
+      }
     }
 
   }
