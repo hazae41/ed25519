@@ -19,7 +19,7 @@ export function fromWasm(wasm: typeof Ed25519Wasm) {
 
   function getMemory(bytesOrCopiable: BytesOrCopiable) {
     if (bytesOrCopiable instanceof Memory)
-      return Box.createAsMoved(bytesOrCopiable)
+      return Box.createAsDropped(bytesOrCopiable)
     if (bytesOrCopiable instanceof Uint8Array)
       return Box.create(new Memory(bytesOrCopiable))
     return Box.create(new Memory(bytesOrCopiable.bytes))
@@ -46,7 +46,7 @@ export function fromWasm(wasm: typeof Ed25519Wasm) {
     static async importOrThrow(bytes: BytesOrCopiable) {
       using memory = getMemory(bytes)
 
-      const inner = Ed25519SigningKey.from_bytes(memory.inner)
+      const inner = Ed25519SigningKey.from_bytes(memory.value)
 
       return new SigningKey(inner)
     }
@@ -56,7 +56,7 @@ export function fromWasm(wasm: typeof Ed25519Wasm) {
 
       using memory2 = getMemory(memory)
 
-      const inner = Ed25519SigningKey.from_bytes(memory2.inner)
+      const inner = Ed25519SigningKey.from_bytes(memory2.value)
 
       return new SigningKey(inner)
     }
@@ -68,7 +68,7 @@ export function fromWasm(wasm: typeof Ed25519Wasm) {
     async signOrThrow(payload: BytesOrCopiable) {
       using memory = getMemory(payload)
 
-      const inner = this.inner.sign(memory.inner)
+      const inner = this.inner.sign(memory.value)
 
       return new Signature(inner)
     }
@@ -110,7 +110,7 @@ export function fromWasm(wasm: typeof Ed25519Wasm) {
     static async importOrThrow(bytes: BytesOrCopiable) {
       using memory = getMemory(bytes)
 
-      const inner = Ed25519VerifyingKey.from_bytes(memory.inner)
+      const inner = Ed25519VerifyingKey.from_bytes(memory.value)
 
       return new VerifyingKey(inner)
     }
@@ -118,7 +118,7 @@ export function fromWasm(wasm: typeof Ed25519Wasm) {
     async verifyOrThrow(payload: BytesOrCopiable, signature: Signature) {
       using memory = getMemory(payload)
 
-      return this.inner.verify(memory.inner, signature.inner)
+      return this.inner.verify(memory.value, signature.inner)
     }
 
     async exportOrThrow() {
@@ -144,7 +144,7 @@ export function fromWasm(wasm: typeof Ed25519Wasm) {
     static importOrThrow(bytes: BytesOrCopiable) {
       using memory = getMemory(bytes)
 
-      const inner = Ed25519Signature.from_bytes(memory.inner)
+      const inner = Ed25519Signature.from_bytes(memory.value)
 
       return new Signature(inner)
     }
