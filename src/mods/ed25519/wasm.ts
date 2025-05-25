@@ -1,5 +1,5 @@
 import { Base64Url } from "@hazae41/base64url"
-import { Box } from "@hazae41/box"
+import { Pin, Ref } from "@hazae41/box"
 import type { Ed25519Signature, Ed25519SigningKey, Ed25519VerifyingKey, Ed25519Wasm } from "@hazae41/ed25519.wasm"
 import { BytesOrCopiable } from "libs/copiable/index.js"
 import { Adapter, SigningKeyJwk } from "./adapter.js"
@@ -19,10 +19,12 @@ export function fromWasm(wasm: typeof Ed25519Wasm) {
 
   function getMemory(bytesOrCopiable: BytesOrCopiable) {
     if (bytesOrCopiable instanceof Memory)
-      return Box.createAsDropped(bytesOrCopiable)
+      return new Ref(bytesOrCopiable)
+
     if (bytesOrCopiable instanceof Uint8Array)
-      return Box.create(new Memory(bytesOrCopiable))
-    return Box.create(new Memory(bytesOrCopiable.bytes))
+      return Pin.from(new Memory(bytesOrCopiable))
+
+    return Pin.from(new Memory(bytesOrCopiable.bytes))
   }
 
   class SigningKey {
