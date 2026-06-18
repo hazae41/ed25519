@@ -1,0 +1,33 @@
+{
+  "type": "module",
+  "name": "@hazae41/ed25519",
+  "version": "0.0.0",
+  "description": "Ed25519 for the web",
+  "repository": "github:hazae41/ed25519",
+  "author": "hazae41",
+  "scripts": {
+    "examine": "deno lint ./src && deno check ./src && deno test ./src",
+    "prepack": "rm -rf ./out && tsc && tscousin"
+  },
+  "files": [
+    "./out"
+  ],
+  "exports": {
+    ".": {
+      "types": "./out/mod.d.ts",
+      "import": "./out/mod.js"
+    }
+  },
+  "devDependencies": {
+    "@hazae41/phobos": "^2.0.16",
+    "@hazae41/tscousin": "^1.0.28",
+    "typescript": "^6.0.3"
+  },
+  "keywords": [
+    "typescript",
+    "esmodules"
+  ],
+  "dependencies": {
+    "@hazae41/ed25519-wasm": "^3.0.0"
+  }
+}
