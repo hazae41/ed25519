@@ -16,7 +16,7 @@ npm install @hazae41/ed25519
 
 ### Why not use WebCrypto
 - Safari produces non-deterministic signatures
-- Tor browser (Firefox ESR) can't recover public key from private key
+- Firefox ESR can't recover public key from private key
 
 ## Usage 
 
